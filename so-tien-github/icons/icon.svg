@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#0B0B0C"/>
+  <!-- chữ S hình học ghép từ hai cung tròn, chấm tròn như dấu kết sổ -->
+  <g fill="#FFFFFF" transform="translate(-40 0)">
+    <path d="M649.8 295.8A152 152 0 1 0 512 512A152 152 0 1 1 374.2 728.2" fill="none" stroke="#FFFFFF" stroke-width="92" stroke-linecap="round"/>
+    <circle cx="752" cy="816" r="48"/>
+  </g>
+</svg>
