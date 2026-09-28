@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Sổ Tiền</title>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -44,7 +44,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   --in:#43C28C; --out:#FF7B6F; --warn:#EFC169; --warn-bg:#2A2214; --good-bg:#12291F;
   --shadow:0 0 0 1px rgba(255,255,255,.04); color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
-html{height:100%;-webkit-text-size-adjust:100%}
+html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:pan-x pan-y}
 body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -141,7 +141,7 @@ button.li:active{background:var(--field)}
 .link{border:0;background:none;padding:0;color:var(--accent);font-weight:600;font-size:14px}
 .input{width:100%;min-height:48px;border:0;border-radius:12px;background:var(--field);padding:12px 14px;font-size:16px;outline:none}
 .input:focus{box-shadow:inset 0 0 0 1.5px var(--ink)}
-textarea.input{min-height:96px;resize:vertical;font-size:15px}
+textarea.input{min-height:96px;resize:vertical;font-size:16px}
 label.f{display:block;font-size:13px;color:var(--muted);margin:16px 2px 6px;font-weight:500}
 .pick{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border:0;border-radius:12px;background:var(--field);padding:8px 12px;text-align:left}
 .pick .chev{margin-left:auto;color:var(--muted);width:18px;height:18px}
@@ -204,7 +204,7 @@ label.f{display:block;font-size:13px;color:var(--muted);margin:16px 2px 6px;font
 .from .lbl{font-size:12px;color:var(--muted)}
 .from b{display:block;font-weight:600}
 .from .chev{margin-left:auto;color:var(--muted);width:18px;height:18px}
-.notein{width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:14px;font-size:15px;outline:none}
+.notein{width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:14px;font-size:16px;outline:none}
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:12px 0 10px}
 .pad button{height:56px;border:0;background:transparent;border-radius:14px;font-size:25px;font-weight:500;font-variant-numeric:tabular-nums;touch-action:manipulation}
 .pad button:active{background:var(--field)}
@@ -251,15 +251,25 @@ details.more summary::-webkit-details-marker{display:none}
 .split .n{font-weight:600;font-size:16px;margin-top:2px}
 .pending-bar{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:11px 13px;margin-top:14px;font-weight:500;font-size:14px;text-align:left}
 .pending-bar svg{width:18px;height:18px;margin-left:auto}
-.bars{display:flex;align-items:flex-end;gap:10px;height:120px}
-.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
-.bar .st{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
-.bar .st span{width:8px;border-radius:4px;min-height:3px}
-.bar .bi{background:var(--in)} .bar .bo{background:var(--ink);opacity:.8}
-.bar small{font-size:11px;color:var(--muted)}
-.bar.today small{color:var(--ink);font-weight:600}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:12px}
-.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+/* biểu đồ 7 ngày: mỗi chuỗi (thu/chi) chọn sóng hoặc cột */
+.wk-read{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:14px;min-height:22px;font-size:13.5px;font-weight:600}
+.wk-read .d{font-size:12px;font-weight:500;color:var(--muted)}
+.wk-plot{position:relative;margin-top:6px;touch-action:pan-y}
+.wk-plot svg{display:block;width:100%;height:auto;overflow:visible;cursor:crosshair}
+.wk-x{display:grid;grid-template-columns:repeat(7,1fr);margin-top:4px;font-size:11px;color:var(--muted);text-align:center}
+.wk-x .today{color:var(--ink);font-weight:600}
+.wk-line{stroke-dasharray:1;stroke-dashoffset:1;animation:wk-draw .7s var(--ease) forwards}
+.wk-area{animation:fade .5s ease-out both}
+.wk-bar{transform-box:fill-box;transform-origin:50% 100%;animation:wk-grow .45s var(--ease) both;transition:opacity .15s}
+@keyframes wk-draw{to{stroke-dashoffset:0}}
+@keyframes wk-grow{from{transform:scaleY(0)}}
+.wk-ctl{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px}
+.wk-k{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.wk-k .sw{width:10px;height:10px;border-radius:3px}
+.wk-k .lb{min-width:26px}
+.wk-k .seg.mini{background:var(--field)}
+.wk-k .seg.mini button{display:flex;align-items:center;gap:4px}
+.wk-k .seg.mini svg{width:15px;height:15px}
 
 /* tổng quan: tài sản + phân tích */
 .eye{width:36px;height:36px;margin:-8px -8px -8px 0;border:0;border-radius:12px;background:transparent;color:var(--muted);display:grid;place-items:center}
@@ -710,14 +720,15 @@ function vHome(){
   <section class="card" style="margin-top:12px">
     <div class="row between"><h2 class="h">Phân tích</h2>
       <div class="seg mini" id="hc"><button data-c="cat" aria-pressed="${homeChart==='cat'}">Nhóm chi</button><button data-c="week" aria-pressed="${homeChart==='week'}">7 ngày</button></div></div>
-    <div id="chart">${homeChart==='cat'?catChart(st):weekChart()}</div>
+    <div id="chart"></div>
   </section>
   <div class="sec"><h2>Tài khoản · ${accs.length}</h2>${accs.length>3?`<button class="link" id="accMore">${showAllAcc?'Thu gọn':'Xem tất cả'}</button>`:''}</div>
   <div class="card flush">${accs.slice(0,showAllAcc?99:3).map(a=>`<div class="li">${bankLogo(a.bank)}<span class="grow t ell">${esc(bankName(a.bank))}</span><span class="num" style="font-weight:600">${money(a.bal)} ₫</span></div>`).join('')||'<div class="empty">Chưa có tài khoản. Thêm trong Cài đặt.</div>'}</div>
   <div class="sec"><h2>Gần đây</h2>${recent.length?`<button class="link" onclick="go('list')">Lịch sử</button>`:''}</div>
   <div class="card flush">${recent.length?recent.map(txRow).join(''):'<div class="empty">Chưa có giao dịch nào.</div>'}</div>`;
   $('#hc').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;homeChart=b.dataset.c;
-    $('#hc').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#chart').innerHTML=homeChart==='cat'?catChart(st):weekChart()};
+    $('#hc').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawChart(st)};
+  drawChart(st);
   const am=$('#accMore');if(am)am.onclick=()=>{showAllAcc=!showAllAcc;vHome()};
 }
 // Chi theo nhóm: tổng chi, so với cùng kỳ tháng trước, thanh tỉ lệ + bảng nhóm
@@ -730,14 +741,84 @@ function catChart(st){
    <div class="legend-list">${st.cats.map(([c,v])=>`<div class="row"><i style="background:${CAT_COLOR[c]||CAT_COLOR['Khác']}"></i><span class="grow">${esc(c)}</span><span class="muted xs">${Math.round(v/st.out*100)}%</span><b class="num">${money(v)}</b></div>`).join('')}</div>
    <div class="xs muted" style="margin-top:10px">Trung bình ${money(Math.round(st.out/st.day))} ₫/ngày</div>`;
 }
-function weekChart(){
-  const WD=['CN','T2','T3','T4','T5','T6','T7'];
-  const dv=[...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6+i);const a=d.getTime(),b=a+86400000;
+// 7 ngày: Thu/Chi, mỗi chuỗi người dùng chọn Sóng hoặc Cột (nhớ lựa chọn)
+const CH={W:340,T:12,B:130,H:138};
+const chartType=()=>(S.chart=S.chart||{in:'wave',out:'wave'});
+const shortVND=n=>n>=1e9?+(n/1e9).toFixed(1)+' tỷ':n>=1e6?+(n/1e6).toFixed(1)+'tr':n>=1e3?Math.round(n/1e3)+'k':String(n);
+function niceMax(v){const p=10**Math.floor(Math.log10(v)),f=v/p;return p*([1,2,2.5,5,10].find(x=>x>=f)||10)}
+// đường cong đơn điệu (không vọt quá điểm dữ liệu, không lún dưới 0)
+function smoothPath(pts){
+  const n=pts.length,dx=[],m=[],t=[];
+  for(let i=0;i<n-1;i++){dx[i]=pts[i+1][0]-pts[i][0];m[i]=(pts[i+1][1]-pts[i][1])/dx[i]}
+  t[0]=m[0];t[n-1]=m[n-2];
+  for(let i=1;i<n-1;i++)t[i]=m[i-1]*m[i]<=0?0:(m[i-1]+m[i])/2;
+  for(let i=0;i<n-1;i++){if(!m[i]){t[i]=t[i+1]=0;continue}
+    const a=t[i]/m[i],b=t[i+1]/m[i],q=a*a+b*b;if(q>9){const k=3/Math.sqrt(q);t[i]=k*a*m[i];t[i+1]=k*b*m[i]}}
+  const f=v=>+v.toFixed(1);let d=`M${f(pts[0][0])},${f(pts[0][1])}`;
+  for(let i=0;i<n-1;i++){const h=dx[i]/3;d+=`C${f(pts[i][0]+h)},${f(pts[i][1]+t[i]*h)} ${f(pts[i+1][0]-h)},${f(pts[i+1][1]-t[i+1]*h)} ${f(pts[i+1][0])},${f(pts[i+1][1])}`}
+  return d;
+}
+function barPath(x,w,y){const h=CH.B-y,r=Math.min(4,w/2,h);
+  return `M${x},${CH.B}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${CH.B}Z`}
+function weekData(){
+  return [...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6+i);const a=d.getTime(),b=a+86400000;
     const l=S.tx.filter(t=>t.status==='confirmed'&&t.source!=='adjust'&&t.time>=a&&t.time<b);
-    return{d,i:l.filter(t=>t.dir==='in').reduce((s,t)=>s+t.amount,0),o:l.filter(t=>t.dir==='out').reduce((s,t)=>s+t.amount,0)}});
-  const mx=Math.max(1,...dv.map(x=>Math.max(x.i,x.o)));
-  return `<div class="bars" style="margin-top:14px">${dv.map((x,i)=>`<div class="bar ${i===6?'today':''}" title="Thu ${money(x.i)} · Chi ${money(x.o)}"><div class="st"><span class="bi" style="height:${x.i/mx*100}%"></span><span class="bo" style="height:${x.o/mx*100}%"></span></div><small>${i===6?'Nay':WD[x.d.getDay()]}</small></div>`).join('')}</div>
-   <div class="legend"><span><i style="background:var(--in)"></i>Thu</span><span><i style="background:var(--ink);opacity:.8"></i>Chi</span></div>`;
+    return{d,in:l.filter(t=>t.dir==='in').reduce((s,t)=>s+t.amount,0),out:l.filter(t=>t.dir==='out').reduce((s,t)=>s+t.amount,0)}});
+}
+let wkData=[];
+function weekChart(){
+  const WD=['CN','T2','T3','T4','T5','T6','T7'],ty=chartType(),dv=wkData=weekData();
+  const mx=niceMax(Math.max(1,...dv.map(x=>Math.max(x.in,x.out))));
+  const sw=CH.W/7,cx=i=>sw*(i+.5),y=v=>+(CH.B-v/mx*(CH.B-CH.T)).toFixed(1);
+  const SER={in:{c:'var(--in)',op:1},out:{c:'var(--ink)',op:.8}};
+  const bars=['in','out'].filter(k=>ty[k]==='bar'),waves=['in','out'].filter(k=>ty[k]==='wave');
+  const bw=bars.length===2?10:16;
+  let g=`<line x1="0" x2="${CH.W}" y1="${CH.T}" y2="${CH.T}" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <line x1="0" x2="${CH.W}" y1="${(CH.T+CH.B)/2}" y2="${(CH.T+CH.B)/2}" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <line x1="0" x2="${CH.W}" y1="${CH.B}" y2="${CH.B}" stroke="var(--line-2)"/>
+    ${S.hide?'':`<text x="0" y="${CH.T-3}" font-size="10" style="fill:var(--muted)">${shortVND(mx)}</text><text x="0" y="${(CH.T+CH.B)/2-3}" font-size="10" style="fill:var(--muted)">${shortVND(mx/2)}</text>`}
+    <defs>${['in','out'].map(k=>`<linearGradient id="wg-${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${SER[k].c};stop-opacity:.28"/><stop offset="1" style="stop-color:${SER[k].c};stop-opacity:0"/></linearGradient>`).join('')}</defs>`;
+  // cột: vẽ trước, nằm dưới sóng; hai chuỗi cột thì đứng cạnh nhau, cách 2px
+  bars.forEach((k,j)=>{const off=bars.length===2?(j?1:-bw-1):-bw/2;
+    g+=dv.map((x,i)=>x[k]?`<path class="wk-bar" data-i="${i}" d="${barPath(+(cx(i)+off).toFixed(1),bw,Math.min(y(x[k]),CH.B-3))}" style="fill:${SER[k].c};opacity:${SER[k].op};animation-delay:${i*35}ms"/>`:'').join('')});
+  // sóng: nền chuyển màu + viền nền 5px để tách khỏi cột bên dưới + đường 2px
+  waves.forEach(k=>{const pts=dv.map((x,i)=>[cx(i),y(x[k])]),d=smoothPath(pts);
+    g+=`<path class="wk-area" d="${d}L${cx(6)},${CH.B}L${cx(0)},${CH.B}Z" fill="url(#wg-${k})"/>
+      <path d="${d}" fill="none" stroke="var(--card)" stroke-width="5" stroke-linecap="round" class="wk-line" pathLength="1"/>
+      <path d="${d}" fill="none" stroke="${SER[k].c}" stroke-width="2" stroke-linecap="round" class="wk-line" pathLength="1" style="opacity:${k==='out'?.85:1}"/>`});
+  g+=`<g id="wkSel"></g>`;
+  const opt=(k,t,l,svg)=>`<button data-t="${t}" aria-pressed="${ty[k]===t}" aria-label="${k==='in'?'Thu':'Chi'}: ${l}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${svg}</svg>${l}</button>`;
+  const WAVE='<path d="M3 16c3 0 4-8 7-8s4 8 7 8 3-5 4-5"/>',COL='<path d="M6 20V11M12 20V5M18 20v-7"/>';
+  return `<div class="wk-read" id="wkRead"></div>
+   <div class="wk-plot"><svg id="wkSvg" viewBox="0 0 ${CH.W} ${CH.H}" role="img" aria-label="Thu chi 7 ngày: ${dv.map((x,i)=>`${i===6?'hôm nay':WD[x.d.getDay()]} thu ${fmt(x.in)}, chi ${fmt(x.out)}`).join('; ')}">${g}</svg></div>
+   <div class="wk-x">${dv.map((x,i)=>`<span class="${i===6?'today':''}">${i===6?'Nay':WD[x.d.getDay()]}</span>`).join('')}</div>
+   <div class="wk-ctl" id="wkCtl">${['in','out'].map(k=>`<div class="wk-k"><i class="sw" style="background:${SER[k].c};opacity:${SER[k].op}"></i><span class="lb">${k==='in'?'Thu':'Chi'}</span>
+     <div class="seg mini" data-s="${k}">${opt(k,'wave','Sóng',WAVE)}${opt(k,'bar','Cột',COL)}</div></div>`).join('')}</div>`;
+}
+// chạm/rê vào một ngày: vạch dọc + chấm + số liệu ngày đó; bỏ ra thì hiện tổng 7 ngày
+function weekSelect(i){
+  const r=$('#wkRead'),sel=$('#wkSel');if(!r||!sel)return;
+  const ty=chartType(),sw=CH.W/7,mx=niceMax(Math.max(1,...wkData.map(x=>Math.max(x.in,x.out))));
+  const y=v=>CH.B-v/mx*(CH.B-CH.T);
+  $('#wkSvg').querySelectorAll('.wk-bar').forEach(b=>b.style.opacity=i==null||+b.dataset.i===i?'':'.3');
+  if(i==null){const ti=wkData.reduce((s,x)=>s+x.in,0),to=wkData.reduce((s,x)=>s+x.out,0);
+    r.innerHTML=`<span class="d">7 ngày qua</span><span class="row num" style="gap:12px"><span class="in">+${money(ti)}</span><span>−${money(to)}</span></span>`;sel.innerHTML='';return}
+  const x=wkData[i],cx=sw*(i+.5);
+  r.innerHTML=`<span class="d">${i===6?'Hôm nay':x.d.toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'numeric'})}</span><span class="row num" style="gap:12px"><span class="in">+${money(x.in)}</span><span>−${money(x.out)}</span></span>`;
+  sel.innerHTML=`<line x1="${cx}" x2="${cx}" y1="${CH.T}" y2="${CH.B}" stroke="var(--line-2)" stroke-width="1.5"/>`+
+    ['in','out'].filter(k=>ty[k]==='wave').map(k=>`<circle cx="${cx}" cy="${y(x[k]).toFixed(1)}" r="4.5" style="fill:${k==='in'?'var(--in)':'var(--ink)'};stroke:var(--card)" stroke-width="2"/>`).join('');
+}
+function drawChart(st){
+  const c=$('#chart');c.innerHTML=homeChart==='cat'?catChart(st):weekChart();
+  if(homeChart!=='week')return;
+  weekSelect(null);
+  const svg=$('#wkSvg'),idx=e=>{const r=svg.getBoundingClientRect();return Math.min(6,Math.max(0,Math.floor((e.clientX-r.left)/r.width*7)))};
+  let cur=null;
+  svg.addEventListener('pointerdown',e=>{const i=idx(e);cur=e.pointerType==='mouse'||cur!==i?i:null;weekSelect(cur)});
+  svg.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){cur=idx(e);weekSelect(cur)}});
+  svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){cur=null;weekSelect(null)}});
+  $('#wkCtl').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const k=b.closest('[data-s]').dataset.s;
+    if(chartType()[k]===b.dataset.t)return;S.chart[k]=b.dataset.t;save();drawChart(st)};
 }
 function txRow(t){const s=t.dir==='in';
   return `<button class="li tx" onclick="openTx('${t.id}')"><span class="ic ${t.dir}">${ic(s?'in':'out',2)}</span>
@@ -1254,6 +1335,13 @@ function closeSheet(instant){
   addEventListener('pointerup',end);addEventListener('pointercancel',end);
 })();
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+// Khóa zoom: iOS Safari bỏ qua user-scalable=no nên chặn cử chỉ chụm/phóng (chạm đúp đã chặn bằng touch-action); máy tính chặn Ctrl + cuộn / Ctrl +/-
+(()=>{const no=e=>e.preventDefault();
+  ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,no,{passive:false}));
+  document.addEventListener('touchmove',e=>{if(e.touches.length>1||(e.scale&&e.scale!==1))e.preventDefault()},{passive:false});
+  addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
+  addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&/^(=|\+|-|_|0)$/.test(e.key))e.preventDefault()});
+})();
 function copy(s){const done=()=>toast('Đã chép '+s);
   if(navigator.clipboard)navigator.clipboard.writeText(s).then(done,()=>fallback());else fallback();
   function fallback(){const t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();try{document.execCommand('copy');done()}catch(e){toast('Không chép được')}t.remove()}}
