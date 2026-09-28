@@ -8,7 +8,9 @@ Web app quản lý tiền: quét VietQR → nhập số tiền → mở app ngâ
 - Mở app ngân hàng qua deeplink VietQR (MB Bank tự điền; ngân hàng khác dùng ảnh QR)
 - Đọc SMS / email / thông báo (dán vào) → tự nhận tiền vào/ra, số dư
 - Tự khớp lệnh chuyển với tin báo biến động, chống trùng giao dịch
-- Đối soát số dư, lịch sử, thống kê 7 ngày
+- Tự phân nhóm chi tiêu theo nội dung (Grab, tiền điện, ăn trưa…), học theo lần người dùng sửa nhóm
+- Tự đối soát: tin nhắn có số dư (SD) → so với số dư app tính, báo lệch và ghi điều chỉnh 1 chạm
+- Đối soát số dư thủ công, lịch sử, biểu đồ 7 ngày (Thu/Chi chọn dạng sóng hoặc cột)
 
 ## Chạy trên GitHub Pages
 1. Tạo repo mới, upload `index.html` và `README.md`

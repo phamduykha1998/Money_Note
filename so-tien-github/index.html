@@ -250,7 +250,8 @@ details.more summary::-webkit-details-marker{display:none}
 .split .lbl{font-size:12px}
 .split .n{font-weight:600;font-size:16px;margin-top:2px}
 .pending-bar{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:11px 13px;margin-top:14px;font-weight:500;font-size:14px;text-align:left}
-.pending-bar svg{width:18px;height:18px;margin-left:auto}
+.pending-bar svg{width:18px;height:18px;flex:none}
+.pending-bar svg:last-child{margin-left:auto}
 /* biểu đồ 7 ngày: mỗi chuỗi (thu/chi) chọn sóng hoặc cột */
 .wk-read{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:14px;min-height:22px;font-size:13.5px;font-weight:600}
 .wk-read .d{font-size:12px;font-weight:500;color:var(--muted)}
@@ -597,6 +598,62 @@ function toast(msg,ms){document.querySelectorAll('.toast').forEach(x=>x.remove()
 function balanceOf(bank){const a=S.accounts.find(x=>x.bank===bank);let b=a?a.opening:0;
   S.tx.forEach(t=>{if(t.status==='confirmed'&&t.bank===bank)b+=t.dir==='in'?t.amount:-t.amount});return b}
 const pending=()=>S.tx.filter(t=>t.status==='pending'||t.status==='opened');
+
+// ---------- tự phân nhóm: học từ lựa chọn của người dùng trước, sau đó theo từ khóa ----------
+const CAT_RULES=[
+  ['Lương',/\b(luong|salary|payroll)\b/],
+  ['Nhà ở',/tien (nha|phong|tro)|thue (nha|phong)|chung cu|phi quan ly|nha tro/],
+  ['Ăn uống',/grab ?food|shopee ?food|baemin|\ban (sang|trua|toi|vat|uong)\b|com (trua|tam|ga|van phong|nha)|\b(pho|bun|banh mi|lau|nuong|bia|tra sua|sinh to|nuoc mia)\b|ca ?phe|cafe|coffee|highlands|starbucks|phuc long|katinat|nha hang|quan an/],
+  ['Di chuyển',/\bgrab\b|gojek|xanh ?sm|taxi|\bxang\b|petrolimex|gui xe|ve xe|vetc|epass|ve may bay|vietjet|vietnam airlines|bamboo airways/],
+  ['Hóa đơn',/tien (dien|nuoc|mang|internet)|\bdien\b|\bnuoc\b|internet|wifi|\bfpt\b|viettel|vnpt|mobifone|\bcuoc\b|hoa don|\bbill\b|nap (tien )?(dt|dien thoai)|netflix|spotify|youtube|icloud|google one|bao hiem/],
+  ['Mua sắm',/shopee|lazada|tiki|sendo|tiktok ?shop|sieu thi|winmart|bach hoa xanh|co\.?op ?mart|aeon|uniqlo|\bmua\b/],
+];
+// khóa gợi nhớ của một ghi chú: 3 chữ đầu, bỏ dấu, bỏ số và chữ chỉ thời gian (tháng 9 / tháng 10 vẫn là một)
+const catSig=note=>stripVN(note||'').toLowerCase().replace(/[^a-z ]/g,' ').split(/\s+/).filter(w=>w&&!/^(thang|ngay|tuan|nam|ky|dot|lan|t)$/.test(w)).slice(0,3).join(' ');
+function guessCat(note,dir,raw,skipLearned){
+  const k=catSig(note);
+  if(!skipLearned&&k&&S.learn?.[k]) return S.learn[k];
+  for(const src of [note,raw]){if(!src)continue;const t=stripVN(src).toLowerCase();
+    for(const [c,rx] of CAT_RULES){if(dir==='in'&&c!=='Lương')continue;if(rx.test(t))return c}}
+  return 'Khác';
+}
+// Người dùng chọn nhóm khác gợi ý → nhớ lại; đổi luôn các giao dịch cùng kiểu đang để "Khác"
+function learnCat(note,dir,cat,exceptId){
+  const k=catSig(note);if(!k)return 0;S.learn=S.learn||{};
+  if(guessCat(note,dir,'',true)===cat) delete S.learn[k]; else S.learn[k]=cat;
+  const ks=Object.keys(S.learn);if(ks.length>300)delete S.learn[ks[0]];
+  let n=0;S.tx.forEach(t=>{if(t.id!==exceptId&&(t.cat||'Khác')==='Khác'&&cat!=='Khác'&&t.dir===dir&&catSig(t.note)===k){t.cat=cat;n++}});
+  return n;
+}
+
+// ---------- tự đối soát: số dư trong tin nhắn ngân hàng so với số dư app tính ----------
+// Số dư app tính tới thời điểm tin nhắn (tin chỉ ghi tới phút nên tính trọn phút đó); extraId = giao dịch của chính tin nhắn
+function balanceAt(bank,time,extraId){const a=S.accounts.find(x=>x.bank===bank);let b=a?a.opening:0;
+  S.tx.forEach(t=>{if(t.bank===bank&&t.dir&&(t.id===extraId||(t.status==='confirmed'&&t.time<=time+59999)))b+=t.dir==='in'?t.amount:-t.amount});return b}
+function noteBalance(bank,balance,time,txId){
+  if(!bank||balance==null||!S.accounts.some(a=>a.bank===bank)) return 0;
+  S.balSeen=S.balSeen||{};const o=S.balSeen[bank];
+  if(o&&o.time>time) return 0; // tin cũ hơn tin đã có, bỏ qua
+  S.balSeen[bank]={balance,time,txId};
+  return balDiff(bank);
+}
+function balDiff(bank){const s=S.balSeen?.[bank];if(!s||s.ignored)return 0;return s.balance-balanceAt(bank,s.time,s.txId)}
+const balIssues=()=>S.accounts.map(a=>({bank:a.bank,diff:balDiff(a.bank)})).filter(x=>x.diff);
+const balMsg=(bank,d)=>`${bankName(bank)} lệch ${d>0?'+':'−'}${fmt(Math.abs(d))} ₫ so với số dư trong tin nhắn`;
+function balSheet(bank){const s=S.balSeen?.[bank],d=balDiff(bank);if(!s||!d)return;
+  const kv=(k,v)=>`<div class="kv"><span class="muted">${k}</span><span class="v num">${v}</span></div>`;
+  sheet(`<div class="row" style="margin-top:4px">${bankLogo(bank)}<h3 class="grow" style="margin:0">${esc(bankName(bank))}</h3></div>
+   <div class="card flush" style="margin-top:14px">
+    ${kv('Số dư theo tin nhắn',fmt(s.balance)+' ₫')}${kv('Thời điểm',new Date(s.time).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}))}
+    ${kv('App tính',fmt(s.balance-d)+' ₫')}${kv('Lệch',`<span class="${d>0?'in':'out'}">${d>0?'+':'−'}${fmt(Math.abs(d))} ₫</span>`)}</div>
+   <div class="note">Có thể còn ${d>0?'tiền vào':'tiền ra'} chưa ghi, hoặc số dư đầu kỳ chưa đúng.</div>
+   <div class="stack"><button class="btn primary block" id="bFix">Ghi điều chỉnh ${d>0?'+':'−'}${fmt(Math.abs(d))} ₫</button>
+    <button class="btn block" id="bList">Xem giao dịch ${esc(bankName(bank))}</button>
+    <button class="btn ghost block" id="bIgn">Bỏ qua lần này</button></div>`,{noFocus:true});
+  $('#bFix').onclick=()=>{S.tx.push({id:uid(),dir:d>0?'in':'out',amount:Math.abs(d),bank,note:'Điều chỉnh theo số dư trong tin nhắn',source:'adjust',cat:'Khác',status:'confirmed',time:s.time});save();closeSheet();render();toast('Đã ghi điều chỉnh, số dư đã khớp')};
+  $('#bList').onclick=()=>{listBank=bank;listFilter='all';closeSheet(true);go('list')};
+  $('#bIgn').onclick=()=>{s.ignored=true;save();closeSheet();render()};
+}
 function amountInput(id,val){return `<div class="amount"><div class="amount-line"><input id="${id}" class="num" inputmode="numeric" autocomplete="off" placeholder="0" value="${val?fmt(val):''}" aria-label="Số tiền"><span class="cur">₫</span></div><div class="words" id="${id}-w">${val?readVND(val):'Nhập số tiền'}</div></div>`}
 function bindAmount(id,onChange){const i=$('#'+id),w=$('#'+id+'-w');
   i.addEventListener('input',()=>{const n=parseAmount(i.value);i.value=n?fmt(n):'';w.textContent=n?readVND(n):'Nhập số tiền';onChange&&onChange(n)})}
@@ -716,6 +773,7 @@ function vHome(){
     <div class="v num">${money(total)}<span class="cur"> ₫</span></div>
     <div class="mflow num"><span class="in">↓ ${money(st.in,'+')}</span><span>↑ ${money(st.out,'−')}</span><span class="muted">tháng ${st.month}</span></div>
     ${p?`<button class="pending-bar" onclick="go('list')">${ic('alert')}${p} giao dịch cần xác nhận${ic('chev')}</button>`:''}
+    ${balIssues().map(x=>`<button class="pending-bar" onclick="balSheet('${x.bank}')">${ic('alert')}<span class="grow">${esc(bankName(x.bank))} lệch ${money(Math.abs(x.diff),x.diff>0?'+':'−')} ₫ so với tin nhắn</span>${ic('chev')}</button>`).join('')}
   </section>
   <section class="card" style="margin-top:12px">
     <div class="row between"><h2 class="h">Phân tích</h2>
@@ -723,7 +781,7 @@ function vHome(){
     <div id="chart"></div>
   </section>
   <div class="sec"><h2>Tài khoản · ${accs.length}</h2>${accs.length>3?`<button class="link" id="accMore">${showAllAcc?'Thu gọn':'Xem tất cả'}</button>`:''}</div>
-  <div class="card flush">${accs.slice(0,showAllAcc?99:3).map(a=>`<div class="li">${bankLogo(a.bank)}<span class="grow t ell">${esc(bankName(a.bank))}</span><span class="num" style="font-weight:600">${money(a.bal)} ₫</span></div>`).join('')||'<div class="empty">Chưa có tài khoản. Thêm trong Cài đặt.</div>'}</div>
+  <div class="card flush">${accs.slice(0,showAllAcc?99:3).map(a=>`<div class="li">${bankLogo(a.bank)}<span class="grow"><div class="t ell">${esc(bankName(a.bank))}</div>${S.balSeen?.[a.bank]&&!S.balSeen[a.bank].ignored&&!balDiff(a.bank)?'<div class="s ell" style="color:var(--in)">✓ Khớp tin nhắn</div>':''}</span><span class="num" style="font-weight:600">${money(a.bal)} ₫</span></div>`).join('')||'<div class="empty">Chưa có tài khoản. Thêm trong Cài đặt.</div>'}</div>
   <div class="sec"><h2>Gần đây</h2>${recent.length?`<button class="link" onclick="go('list')">Lịch sử</button>`:''}</div>
   <div class="card flush">${recent.length?recent.map(txRow).join(''):'<div class="empty">Chưa có giao dịch nào.</div>'}</div>`;
   $('#hc').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;homeChart=b.dataset.c;
@@ -1038,7 +1096,7 @@ function handleQR(text){
 }
 function recordOpened(ss){
   const r=ss.to;
-  const t={id:uid(),dir:'out',amount:ss.amount,bank:ss.from,note:ss.note||('Chuyển cho '+(r.name||r.account)),peer:r.name,source:'quick',cat:'Khác',status:'opened',time:Date.now()};
+  const t={id:uid(),dir:'out',amount:ss.amount,bank:ss.from,note:ss.note||('Chuyển cho '+(r.name||r.account)),peer:r.name,source:'quick',cat:guessCat(ss.note||r.name,'out'),status:'opened',time:Date.now()};
   S.tx.push(t);
   if(ss.saveRcp&&!S.recipients.some(x=>x.account===r.account&&x.bank===r.bank))S.recipients.push({id:uid(),name:r.name||r.account,bank:r.bank,account:r.account});
   save();awaiting={id:t.id,at:Date.now()};
@@ -1133,15 +1191,19 @@ const SAMPLES=[
 function ingest(text,source,autoConfirm){
   const p=parseMessage(text);
   if(!p||!p.amount){toast('Không đọc được số tiền trong tin này');return null}
-  const t={id:uid(),dir:p.dir,amount:p.amount,bank:p.bank,note:p.note,balance:p.balance,raw:p.raw,source,cat:p.dir==='in'?'Khác':'Khác',status:'pending',time:p.time||Date.now()};
+  const t={id:uid(),dir:p.dir,amount:p.amount,bank:p.bank,note:p.note,balance:p.balance,raw:p.raw,source,cat:guessCat(p.note,p.dir,p.raw),status:'pending',time:p.time||Date.now()};
   // match an opened quick transfer -> that transfer is now proven
   const opened=S.tx.find(x=>x.status==='opened'&&x.dir===t.dir&&x.amount===t.amount&&(!t.bank||x.bank===t.bank)&&Math.abs(x.time-t.time)<=30*60000);
-  if(opened){opened.status='confirmed';opened.proof=source;save();render();toast('Đã khớp với lệnh chuyển nhanh → xác nhận tự động');return opened}
+  if(opened){opened.status='confirmed';opened.proof=source;if(opened.balance==null)opened.balance=t.balance;
+    const bd=noteBalance(t.bank||opened.bank,t.balance,t.time,opened.id);save();render();
+    toast('Đã khớp với lệnh chuyển nhanh → xác nhận tự động'+(bd?'. '+balMsg(t.bank||opened.bank,bd):''),bd?5000:0);return opened}
   const d=findDuplicate(S.tx,t);
   if(d) t.dupOf=d.id;
   if(autoConfirm&&!d&&t.dir) t.status='confirmed';
-  S.tx.push(t);save();renderTabs();
-  toast(t.status==='confirmed'?'Đã ghi giao dịch':d?'Có thể trùng, xem ở Lịch sử':'Đã thêm, xác nhận ở Lịch sử');
+  S.tx.push(t);
+  const bd=noteBalance(t.bank,t.balance,t.time,t.dupOf||t.id); // tin trùng: số dư đã tính qua giao dịch gốc
+  save();renderTabs();
+  toast((t.status==='confirmed'?'Đã ghi giao dịch':d?'Có thể trùng, xem ở Lịch sử':'Đã thêm, xác nhận ở Lịch sử')+(bd?'. '+balMsg(t.bank,bd):''),bd?5000:0);
   return t;
 }
 function simulateNotification(){
@@ -1159,7 +1221,9 @@ function simulateNotification(){
   setTimeout(()=>{if(document.body.contains(n)){ingest(s.text,'notify',false);done();render()}},9000);
 }
 function confirmTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;t.status='confirmed';delete t.dupOf;save();render();toast('Đã xác nhận')}
-function rejectTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;S.tx=S.tx.filter(x=>x.id!==id);save();render();toast('Đã bỏ')}
+function rejectTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;S.tx=S.tx.filter(x=>x.id!==id);
+  if(S.balSeen?.[t.bank]?.txId===id)delete S.balSeen[t.bank]; // tin bị bỏ thì số dư của nó cũng bỏ
+  save();render();toast('Đã bỏ')}
 function mergeTx(id){const t=S.tx.find(x=>x.id===id),d=t&&S.tx.find(x=>x.id===t.dupOf);if(!t)return;
   if(d&&d.status!=='confirmed')d.status='confirmed';if(d&&t.balance!=null&&d.balance==null)d.balance=t.balance;
   S.tx=S.tx.filter(x=>x.id!==id);save();render();toast('Đã gộp thành một giao dịch')}
@@ -1172,16 +1236,23 @@ function txForm(t,title,onSave,head=''){
    <div style="margin-top:10px">${amountInput('tamt',t.amount)}</div>
    <label class="f" for="tbank">Tài khoản</label>
    <select class="input" id="tbank">${S.accounts.map(a=>`<option value="${a.bank}" ${t.bank===a.bank?'selected':''}>${esc(bankName(a.bank))}</option>`).join('')}</select>
-   <label class="f">Nhóm</label>
+   <label class="f" for="tnote">Ghi chú</label><input class="input" id="tnote" value="${esc(t.note||'')}" maxlength="80" placeholder="VD: Grab, tiền điện, ăn trưa">
+   <label class="f">Nhóm <span id="catAuto" style="font-weight:400"></span></label>
    <div class="chips" id="tcat">${CATS.map(c=>`<button class="chip" data-c="${c}" aria-pressed="${(t.cat||'Khác')===c}">${c}</button>`).join('')}</div>
-   <label class="f" for="tnote">Ghi chú</label><input class="input" id="tnote" value="${esc(t.note||'')}" maxlength="80">
    <div class="stack"><button class="btn primary block" id="tsave">Lưu</button><button class="btn ghost block" onclick="closeSheet()">Hủy</button></div>`);
   bindAmount('tamt');
-  let cat=t.cat||'Khác';
-  $('#dirSeg').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;dir=b.dataset.d;$('#dirSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))};
-  $('#tcat').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;cat=b.dataset.c;$('#tcat').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b))};
+  let cat=t.cat||'Khác',picked=!!t.cat; // chưa tự chọn nhóm thì app tự gợi ý theo ghi chú
+  const setCat=c=>{cat=c;const box=$('#tcat');box.querySelectorAll('.chip').forEach(x=>{x.setAttribute('aria-pressed',x.dataset.c===c);
+    if(x.dataset.c===c&&(x.offsetLeft<box.scrollLeft||x.offsetLeft+x.offsetWidth>box.scrollLeft+box.clientWidth))box.scrollTo({left:x.offsetLeft-16,behavior:'smooth'})})};
+  const auto=()=>{if(picked)return;const n=$('#tnote').value.trim(),g=n?guessCat(n,dir):'Khác';setCat(g);$('#catAuto').textContent=g!=='Khác'?'· tự chọn theo ghi chú':''};
+  $('#tnote').addEventListener('input',auto);
+  $('#dirSeg').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;dir=b.dataset.d;$('#dirSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));auto()};
+  $('#tcat').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;picked=true;$('#catAuto').textContent='';setCat(b.dataset.c)};
   $('#tsave').onclick=()=>{const amount=getAmt('tamt');if(!amount)return toast('Nhập số tiền');
-    onSave({dir,amount,bank:$('#tbank').value,cat,note:$('#tnote').value.trim()});closeSheet()};
+    const v={dir,amount,bank:$('#tbank').value,cat,note:$('#tnote').value.trim()};
+    const changed=t.id?cat!==(t.cat||'Khác'):picked; // chỉ học khi người dùng thật sự đổi nhóm
+    const n=v.note&&changed?learnCat(v.note,dir,cat,t.id):0;
+    onSave(v);closeSheet();if(n)setTimeout(()=>toast(`Đã nhớ nhóm “${cat}”, đổi thêm ${n} giao dịch tương tự`,3500),300)};
 }
 $('#fab').innerHTML=ic('plus',2.2);
 $('#fab').onclick=()=>addSheet();
@@ -1220,7 +1291,7 @@ function pendCard(t){
   return `<div class="pend ${dup?'dup':''}">
    <div class="row between"><span class="row" style="gap:10px;min-width:0">${t.bank?bankLogo(t.bank,'sm'):''}<span class="ell small" style="font-weight:500">${esc(t.note||bankName(t.bank))}</span></span>
      <span class="big num ${t.dir==='in'?'in':''}">${t.dir==='in'?'+':t.dir==='out'?'−':'?'}${fmt(t.amount)}</span></div>
-   <div class="row xs muted" style="margin-top:6px;gap:6px"><span class="tag ${opened?'warn':''}">${opened?'Đã mở lệnh chuyển':SRC[t.source]}</span>${hm(t.time)}${t.balance!=null?` · Số dư ${fmt(t.balance)} ₫`:''}</div>
+   <div class="row xs muted" style="margin-top:6px;gap:6px"><span class="tag ${opened?'warn':''}">${opened?'Đã mở lệnh chuyển':SRC[t.source]}</span><span class="tag">${esc(t.cat||'Khác')}</span>${hm(t.time)}${t.balance!=null?` · Số dư ${fmt(t.balance)} ₫`:''}</div>
    ${!t.dir?'<div class="note">Không rõ tiền vào hay ra. Chạm Sửa để chọn.</div>':''}
    ${dup?`<div class="note">Có thể trùng với ${dup.dir==='in'?'+':'−'}${fmt(dup.amount)} ₫ (${SRC[dup.source]}, ${hm(dup.time)}).</div>`:''}
    ${t.raw?`<details class="raw-d"><summary>Tin gốc</summary><div class="raw">${esc(t.raw)}</div></details>`:''}
@@ -1256,7 +1327,7 @@ function addSheet(mode){
 function vMore(){
   $('#view').innerHTML=`
   <div class="sec" style="margin-top:8px"><h2>Đối soát số dư</h2></div>
-  <div class="card"><div class="small muted">Nhập số dư thật trong app ngân hàng để tìm giao dịch bị sót.</div>
+  <div class="card"><div class="small muted">Tin nhắn có số dư (SD) sẽ được tự đối soát. Hoặc nhập số dư thật trong app ngân hàng để kiểm tra tay.</div>
    <label class="f" for="rcBank">Tài khoản</label><select class="input" id="rcBank">${S.accounts.map(a=>`<option value="${a.bank}">${esc(bankName(a.bank))} · app tính ${money(balanceOf(a.bank))} ₫</option>`).join('')}</select>
    <label class="f">Số dư thực tế</label>${amountInput('rcAmt',0)}
    <button class="btn primary block" style="margin-top:12px" id="rcGo">So sánh</button><div id="rcOut"></div></div>
