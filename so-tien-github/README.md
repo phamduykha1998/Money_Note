@@ -12,6 +12,7 @@ Web app quản lý tiền: quét VietQR → nhập số tiền → mở app ngâ
 - Tự đối soát: tin nhắn có số dư (SD) → so với số dư app tính, báo lệch và ghi điều chỉnh 1 chạm
 - Tự xác nhận tin rõ ràng (biết vào/ra, đúng tài khoản, không trùng) — bật/tắt trong Cài đặt
 - Khoản định kỳ hằng tháng (tiền nhà, lương…): tự ghi hoặc nhắc xác nhận, tin nhắn ngân hàng khớp ±3 ngày không bị ghi trùng
+- Nhập tin từ Phím tắt iPhone: tự động hóa "Thông báo" ghi thông báo ngân hàng vào SoTien.txt, app nhập các tin mới (bỏ OTP/quảng cáo, không nhập trùng)
 - Người nhận quen: tự điền số tiền + nội dung lần trước, xếp theo lần chuyển gần nhất
 - Đối soát số dư thủ công, lịch sử, biểu đồ 7 ngày (Thu/Chi chọn dạng sóng hoặc cột)
 
