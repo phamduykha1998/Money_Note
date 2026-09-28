@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Sổ Tiền</title>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -44,7 +44,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   --in:#43C28C; --out:#FF7B6F; --warn:#EFC169; --warn-bg:#2A2214; --good-bg:#12291F;
   --shadow:0 0 0 1px rgba(255,255,255,.04); color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
-html{height:100%;-webkit-text-size-adjust:100%}
+html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:pan-x pan-y}
 body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -125,6 +125,7 @@ button.li:active{background:var(--field)}
 .chev svg,.pick>svg,.from>svg,.pending-bar svg{width:18px;height:18px;display:block;flex:none}
 .pick>svg,.from>svg{margin-left:auto;color:var(--muted)}
 .li .chev{display:block}
+.li .ic svg{width:19px;height:19px}
 .av{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:15px;background:var(--field);color:var(--ink-2)}
 
 /* buttons & fields */
@@ -141,7 +142,7 @@ button.li:active{background:var(--field)}
 .link{border:0;background:none;padding:0;color:var(--accent);font-weight:600;font-size:14px}
 .input{width:100%;min-height:48px;border:0;border-radius:12px;background:var(--field);padding:12px 14px;font-size:16px;outline:none}
 .input:focus{box-shadow:inset 0 0 0 1.5px var(--ink)}
-textarea.input{min-height:96px;resize:vertical;font-size:15px}
+textarea.input{min-height:96px;resize:vertical;font-size:16px}
 label.f{display:block;font-size:13px;color:var(--muted);margin:16px 2px 6px;font-weight:500}
 .pick{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border:0;border-radius:12px;background:var(--field);padding:8px 12px;text-align:left}
 .pick .chev{margin-left:auto;color:var(--muted);width:18px;height:18px}
@@ -204,7 +205,7 @@ label.f{display:block;font-size:13px;color:var(--muted);margin:16px 2px 6px;font
 .from .lbl{font-size:12px;color:var(--muted)}
 .from b{display:block;font-weight:600}
 .from .chev{margin-left:auto;color:var(--muted);width:18px;height:18px}
-.notein{width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:14px;font-size:15px;outline:none}
+.notein{width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:14px;font-size:16px;outline:none}
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:12px 0 10px}
 .pad button{height:56px;border:0;background:transparent;border-radius:14px;font-size:25px;font-weight:500;font-variant-numeric:tabular-nums;touch-action:manipulation}
 .pad button:active{background:var(--field)}
@@ -250,16 +251,28 @@ details.more summary::-webkit-details-marker{display:none}
 .split .lbl{font-size:12px}
 .split .n{font-weight:600;font-size:16px;margin-top:2px}
 .pending-bar{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:11px 13px;margin-top:14px;font-weight:500;font-size:14px;text-align:left}
-.pending-bar svg{width:18px;height:18px;margin-left:auto}
-.bars{display:flex;align-items:flex-end;gap:10px;height:120px}
-.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
-.bar .st{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
-.bar .st span{width:8px;border-radius:4px;min-height:3px}
-.bar .bi{background:var(--in)} .bar .bo{background:var(--ink);opacity:.8}
-.bar small{font-size:11px;color:var(--muted)}
-.bar.today small{color:var(--ink);font-weight:600}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:12px}
-.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+.pending-bar svg{width:18px;height:18px;flex:none}
+.pending-bar svg:last-child{margin-left:auto}
+.import-bar{background:var(--field);color:var(--ink-2);cursor:pointer}
+/* biểu đồ 7 ngày: mỗi chuỗi (thu/chi) chọn sóng hoặc cột */
+.wk-read{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:14px;min-height:22px;font-size:13.5px;font-weight:600}
+.wk-read .d{font-size:12px;font-weight:500;color:var(--muted)}
+.wk-plot{position:relative;margin-top:6px;touch-action:pan-y}
+.wk-plot svg{display:block;width:100%;height:auto;overflow:visible;cursor:crosshair}
+.wk-x{display:grid;grid-template-columns:repeat(7,1fr);margin-top:4px;font-size:11px;color:var(--muted);text-align:center}
+.wk-x .today{color:var(--ink);font-weight:600}
+.wk-line{stroke-dasharray:1;stroke-dashoffset:1;animation:wk-draw .7s var(--ease) forwards}
+.wk-area{animation:fade .5s ease-out both}
+.wk-bar{transform-box:fill-box;transform-origin:50% 100%;animation:wk-grow .45s var(--ease) both;transition:opacity .15s}
+@keyframes wk-draw{to{stroke-dashoffset:0}}
+@keyframes wk-grow{from{transform:scaleY(0)}}
+.wk-ctl{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px}
+.wk-k{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.wk-k .sw{width:10px;height:10px;border-radius:3px}
+.wk-k .lb{min-width:26px}
+.wk-k .seg.mini{background:var(--field)}
+.wk-k .seg.mini button{display:flex;align-items:center;gap:4px}
+.wk-k .seg.mini svg{width:15px;height:15px}
 
 /* tổng quan: tài sản + phân tích */
 .eye{width:36px;height:36px;margin:-8px -8px -8px 0;border:0;border-radius:12px;background:transparent;color:var(--muted);display:grid;place-items:center}
@@ -277,6 +290,13 @@ details.more summary::-webkit-details-marker{display:none}
 .legend-list{margin-top:12px;display:flex;flex-direction:column;gap:9px;font-size:14px}
 .legend-list i{width:10px;height:10px;border-radius:3px;flex:none}
 .legend-list b{font-weight:600;min-width:84px;text-align:right}
+
+/* công tắc bật/tắt trong Cài đặt */
+.switch{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
+.switch input{appearance:none;-webkit-appearance:none;flex:none;width:44px;height:26px;margin:0;border-radius:13px;background:var(--line-2);position:relative;cursor:pointer;transition:background .2s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .22s var(--ease)}
+.switch input:checked{background:var(--in)}
+.switch input:checked::after{transform:translateX(18px)}
 
 /* tx rows */
 .tx .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--field);color:var(--ink-2)}
@@ -576,7 +596,7 @@ save();
 const fmt=n=>(Math.round(n)||0).toLocaleString('vi-VN');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
-const SRC={quick:'Chuyển nhanh',sms:'SMS',email:'Email',notify:'Thông báo',manual:'Nhập tay',adjust:'Điều chỉnh'};
+const SRC={quick:'Chuyển nhanh',sms:'SMS',email:'Email',notify:'Thông báo',manual:'Nhập tay',adjust:'Điều chỉnh',recurring:'Định kỳ',shortcut:'Phím tắt'};
 const CATS=['Ăn uống','Di chuyển','Mua sắm','Hóa đơn','Nhà ở','Lương','Khác'];
 const bankName=id=>BANKS[id]?.name||'Không rõ';
 function dayLabel(t){const d=new Date(t),n=new Date();const k=x=>x.toDateString();
@@ -587,6 +607,99 @@ function toast(msg,ms){document.querySelectorAll('.toast').forEach(x=>x.remove()
 function balanceOf(bank){const a=S.accounts.find(x=>x.bank===bank);let b=a?a.opening:0;
   S.tx.forEach(t=>{if(t.status==='confirmed'&&t.bank===bank)b+=t.dir==='in'?t.amount:-t.amount});return b}
 const pending=()=>S.tx.filter(t=>t.status==='pending'||t.status==='opened');
+
+// ---------- tự phân nhóm: học từ lựa chọn của người dùng trước, sau đó theo từ khóa ----------
+const CAT_RULES=[
+  ['Lương',/\b(luong|salary|payroll)\b/],
+  ['Nhà ở',/tien (nha|phong|tro)|thue (nha|phong)|chung cu|phi quan ly|nha tro/],
+  ['Ăn uống',/grab ?food|shopee ?food|baemin|\ban (sang|trua|toi|vat|uong)\b|com (trua|tam|ga|van phong|nha)|\b(pho|bun|banh mi|lau|nuong|bia|tra sua|sinh to|nuoc mia)\b|ca ?phe|cafe|coffee|highlands|starbucks|phuc long|katinat|nha hang|quan an/],
+  ['Di chuyển',/\bgrab\b|gojek|xanh ?sm|taxi|\bxang\b|petrolimex|gui xe|ve xe|vetc|epass|ve may bay|vietjet|vietnam airlines|bamboo airways/],
+  ['Hóa đơn',/tien (dien|nuoc|mang|internet)|\bdien\b|\bnuoc\b|internet|wifi|\bfpt\b|viettel|vnpt|mobifone|\bcuoc\b|hoa don|\bbill\b|nap (tien )?(dt|dien thoai)|netflix|spotify|youtube|icloud|google one|bao hiem/],
+  ['Mua sắm',/shopee|lazada|tiki|sendo|tiktok ?shop|sieu thi|winmart|bach hoa xanh|co\.?op ?mart|aeon|uniqlo|\bmua\b/],
+];
+// khóa gợi nhớ của một ghi chú: 3 chữ đầu, bỏ dấu, bỏ số và chữ chỉ thời gian (tháng 9 / tháng 10 vẫn là một)
+const catSig=note=>stripVN(note||'').toLowerCase().replace(/[^a-z ]/g,' ').split(/\s+/).filter(w=>w&&!/^(thang|ngay|tuan|nam|ky|dot|lan|t)$/.test(w)).slice(0,3).join(' ');
+function guessCat(note,dir,raw,skipLearned){
+  const k=catSig(note);
+  if(!skipLearned&&k&&S.learn?.[k]) return S.learn[k];
+  for(const src of [note,raw]){if(!src)continue;const t=stripVN(src).toLowerCase();
+    for(const [c,rx] of CAT_RULES){if(dir==='in'&&c!=='Lương')continue;if(rx.test(t))return c}}
+  return 'Khác';
+}
+// Người dùng chọn nhóm khác gợi ý → nhớ lại; đổi luôn các giao dịch cùng kiểu đang để "Khác"
+function learnCat(note,dir,cat,exceptId){
+  const k=catSig(note);if(!k)return 0;S.learn=S.learn||{};
+  if(guessCat(note,dir,'',true)===cat) delete S.learn[k]; else S.learn[k]=cat;
+  const ks=Object.keys(S.learn);if(ks.length>300)delete S.learn[ks[0]];
+  let n=0;S.tx.forEach(t=>{if(t.id!==exceptId&&(t.cat||'Khác')==='Khác'&&cat!=='Khác'&&t.dir===dir&&catSig(t.note)===k){t.cat=cat;n++}});
+  return n;
+}
+
+// ---------- định kỳ hằng tháng: đến ngày thì tự ghi, hoặc tạo giao dịch chờ xác nhận ----------
+const ym=t=>{const d=new Date(t);return d.getFullYear()*12+d.getMonth()};
+function runRecurring(){
+  const now=new Date(),cur=ym(now),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();let n=0;
+  (S.recurring||[]).forEach(r=>{
+    const day=Math.min(r.day,dim);
+    if(r.last>=cur||now.getDate()<day) return; // chỉ tháng hiện tại, không ghi bù các tháng đã qua
+    const time=Math.min(new Date(now.getFullYear(),now.getMonth(),day,9).getTime(),Date.now());
+    S.tx.push({id:uid(),dir:r.dir,amount:r.amount,bank:r.bank,note:r.note,cat:r.cat,source:'recurring',recId:r.id,status:r.mode==='auto'?'confirmed':'pending',time});
+    r.last=cur;n++});
+  if(n)save();
+  return n;
+}
+const recLabel=(r,long)=>long?`Ngày ${r.day} hằng tháng · ${r.mode==='auto'?'tự ghi':'nhắc xác nhận'}`:`Ngày ${r.day} · ${r.mode==='auto'?'tự ghi':'nhắc'}`;
+// Tạo/sửa khoản định kỳ. from = giao dịch gốc (khi bấm "Lặp lại hằng tháng")
+function recurringSheet(id,from){
+  // bỏ "tháng 9", "T9", "09/2026" khỏi ghi chú để dùng cho mọi tháng
+  const r=id?S.recurring.find(x=>x.id===id):null,t=r||(from?{...from,id:undefined,note:(from.note||'').replace(/\s*\b(tháng|thang|t)\s*\d{1,2}(\/\d{2,4})?(?!\d)/gi,'').replace(/\s*\b\d{1,2}\/\d{4}(?!\d)/g,'').trim()}:{});
+  let day=r?r.day:new Date(from?.time||Date.now()).getDate(),mode=r?r.mode:'remind';
+  txForm(t,id?'Sửa khoản định kỳ':'Khoản định kỳ',v=>{
+    day=Math.min(31,Math.max(1,parseInt($('#rDay').value,10)||1));
+    if(r){Object.assign(r,v,{day,mode});toast('Đã lưu')}
+    else{const now=new Date();S.recurring=S.recurring||[];
+      // đã có giao dịch gốc tháng này, hoặc đã qua ngày → bắt đầu từ tháng sau
+      const last=from&&ym(from.time)===ym(now)||now.getDate()>=day?ym(now):0;
+      const nr={id:uid(),...v,day,mode,last};S.recurring.push(nr);if(from)from.recId=nr.id;
+      toast('Đã tạo khoản định kỳ ngày '+day)}
+    save();render()},'',
+   `<label class="f" for="rDay">Ngày trong tháng</label><input class="input num" id="rDay" inputmode="numeric" maxlength="2" value="${day}">
+    <label class="f">Khi đến ngày</label>
+    <div class="seg" id="rMode"><button data-m="remind" aria-pressed="${mode==='remind'}">Nhắc xác nhận</button><button data-m="auto" aria-pressed="${mode==='auto'}">Tự ghi</button></div>
+    <div class="xs muted" style="margin:8px 2px 0;line-height:1.5">Tin nhắn ngân hàng cùng số tiền trong ±3 ngày sẽ tự khớp vào khoản này, không bị ghi trùng.</div>
+    ${r?'<button class="btn danger block" style="margin-top:12px" id="rDel">Xóa khoản định kỳ</button>':''}`);
+  $('#rMode').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;mode=b.dataset.m;$('#rMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))};
+  if(r)$('#rDel').onclick=()=>{if(!confirm('Xóa khoản định kỳ này? Các giao dịch đã ghi vẫn giữ lại.'))return;S.recurring=S.recurring.filter(x=>x.id!==id);save();closeSheet();render()};
+}
+
+// ---------- tự đối soát: số dư trong tin nhắn ngân hàng so với số dư app tính ----------
+// Số dư app tính tới thời điểm tin nhắn (tin chỉ ghi tới phút nên tính trọn phút đó); extraId = giao dịch của chính tin nhắn
+function balanceAt(bank,time,extraId){const a=S.accounts.find(x=>x.bank===bank);let b=a?a.opening:0;
+  S.tx.forEach(t=>{if(t.bank===bank&&t.dir&&(t.id===extraId||(t.status==='confirmed'&&t.time<=time+59999)))b+=t.dir==='in'?t.amount:-t.amount});return b}
+function noteBalance(bank,balance,time,txId){
+  if(!bank||balance==null||!S.accounts.some(a=>a.bank===bank)) return 0;
+  S.balSeen=S.balSeen||{};const o=S.balSeen[bank];
+  if(o&&o.time>time) return 0; // tin cũ hơn tin đã có, bỏ qua
+  S.balSeen[bank]={balance,time,txId};
+  return balDiff(bank);
+}
+function balDiff(bank){const s=S.balSeen?.[bank];if(!s||s.ignored)return 0;return s.balance-balanceAt(bank,s.time,s.txId)}
+const balIssues=()=>S.accounts.map(a=>({bank:a.bank,diff:balDiff(a.bank)})).filter(x=>x.diff);
+const balMsg=(bank,d)=>`${bankName(bank)} lệch ${d>0?'+':'−'}${fmt(Math.abs(d))} ₫ so với số dư trong tin nhắn`;
+function balSheet(bank){const s=S.balSeen?.[bank],d=balDiff(bank);if(!s||!d)return;
+  const kv=(k,v)=>`<div class="kv"><span class="muted">${k}</span><span class="v num">${v}</span></div>`;
+  sheet(`<div class="row" style="margin-top:4px">${bankLogo(bank)}<h3 class="grow" style="margin:0">${esc(bankName(bank))}</h3></div>
+   <div class="card flush" style="margin-top:14px">
+    ${kv('Số dư theo tin nhắn',fmt(s.balance)+' ₫')}${kv('Thời điểm',new Date(s.time).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}))}
+    ${kv('App tính',fmt(s.balance-d)+' ₫')}${kv('Lệch',`<span class="${d>0?'in':'out'}">${d>0?'+':'−'}${fmt(Math.abs(d))} ₫</span>`)}</div>
+   <div class="note">Có thể còn ${d>0?'tiền vào':'tiền ra'} chưa ghi, hoặc số dư đầu kỳ chưa đúng.</div>
+   <div class="stack"><button class="btn primary block" id="bFix">Ghi điều chỉnh ${d>0?'+':'−'}${fmt(Math.abs(d))} ₫</button>
+    <button class="btn block" id="bList">Xem giao dịch ${esc(bankName(bank))}</button>
+    <button class="btn ghost block" id="bIgn">Bỏ qua lần này</button></div>`,{noFocus:true});
+  $('#bFix').onclick=()=>{S.tx.push({id:uid(),dir:d>0?'in':'out',amount:Math.abs(d),bank,note:'Điều chỉnh theo số dư trong tin nhắn',source:'adjust',cat:'Khác',status:'confirmed',time:s.time});save();closeSheet();render();toast('Đã ghi điều chỉnh, số dư đã khớp')};
+  $('#bList').onclick=()=>{listBank=bank;listFilter='all';closeSheet(true);go('list')};
+  $('#bIgn').onclick=()=>{s.ignored=true;save();closeSheet();render()};
+}
 function amountInput(id,val){return `<div class="amount"><div class="amount-line"><input id="${id}" class="num" inputmode="numeric" autocomplete="off" placeholder="0" value="${val?fmt(val):''}" aria-label="Số tiền"><span class="cur">₫</span></div><div class="words" id="${id}-w">${val?readVND(val):'Nhập số tiền'}</div></div>`}
 function bindAmount(id,onChange){const i=$('#'+id),w=$('#'+id+'-w');
   i.addEventListener('input',()=>{const n=parseAmount(i.value);i.value=n?fmt(n):'';w.textContent=n?readVND(n):'Nhập số tiền';onChange&&onChange(n)})}
@@ -609,6 +722,7 @@ const ICONS={
  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
  eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
  eyeOff:'<path d="M4 4l16 16M10.6 6.1A9 9 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.7 3.4M6.6 7.6A16 16 0 0 0 2.5 12S6 18 12 18a9 9 0 0 0 4-.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/>', alert:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.5M12 15.8h.01"/>',
+ repeat:'<path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/>',
 };
 const ic=(n,sw)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.8}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
 const initial=s=>esc(String(s||'?').trim().charAt(0).toUpperCase());
@@ -706,18 +820,21 @@ function vHome(){
     <div class="v num">${money(total)}<span class="cur"> ₫</span></div>
     <div class="mflow num"><span class="in">↓ ${money(st.in,'+')}</span><span>↑ ${money(st.out,'−')}</span><span class="muted">tháng ${st.month}</span></div>
     ${p?`<button class="pending-bar" onclick="go('list')">${ic('alert')}${p} giao dịch cần xác nhận${ic('chev')}</button>`:''}
+    ${S.lastImport?importBtn('pending-bar import-bar','<span class="grow">Nhập tin mới từ Phím tắt</span>'):''}
+    ${balIssues().map(x=>`<button class="pending-bar" onclick="balSheet('${x.bank}')">${ic('alert')}<span class="grow">${esc(bankName(x.bank))} lệch ${money(Math.abs(x.diff),x.diff>0?'+':'−')} ₫ so với tin nhắn</span>${ic('chev')}</button>`).join('')}
   </section>
   <section class="card" style="margin-top:12px">
     <div class="row between"><h2 class="h">Phân tích</h2>
       <div class="seg mini" id="hc"><button data-c="cat" aria-pressed="${homeChart==='cat'}">Nhóm chi</button><button data-c="week" aria-pressed="${homeChart==='week'}">7 ngày</button></div></div>
-    <div id="chart">${homeChart==='cat'?catChart(st):weekChart()}</div>
+    <div id="chart"></div>
   </section>
   <div class="sec"><h2>Tài khoản · ${accs.length}</h2>${accs.length>3?`<button class="link" id="accMore">${showAllAcc?'Thu gọn':'Xem tất cả'}</button>`:''}</div>
-  <div class="card flush">${accs.slice(0,showAllAcc?99:3).map(a=>`<div class="li">${bankLogo(a.bank)}<span class="grow t ell">${esc(bankName(a.bank))}</span><span class="num" style="font-weight:600">${money(a.bal)} ₫</span></div>`).join('')||'<div class="empty">Chưa có tài khoản. Thêm trong Cài đặt.</div>'}</div>
+  <div class="card flush">${accs.slice(0,showAllAcc?99:3).map(a=>`<div class="li">${bankLogo(a.bank)}<span class="grow"><div class="t ell">${esc(bankName(a.bank))}</div>${S.balSeen?.[a.bank]&&!S.balSeen[a.bank].ignored&&!balDiff(a.bank)?'<div class="s ell" style="color:var(--in)">✓ Khớp tin nhắn</div>':''}</span><span class="num" style="font-weight:600">${money(a.bal)} ₫</span></div>`).join('')||'<div class="empty">Chưa có tài khoản. Thêm trong Cài đặt.</div>'}</div>
   <div class="sec"><h2>Gần đây</h2>${recent.length?`<button class="link" onclick="go('list')">Lịch sử</button>`:''}</div>
   <div class="card flush">${recent.length?recent.map(txRow).join(''):'<div class="empty">Chưa có giao dịch nào.</div>'}</div>`;
   $('#hc').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;homeChart=b.dataset.c;
-    $('#hc').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#chart').innerHTML=homeChart==='cat'?catChart(st):weekChart()};
+    $('#hc').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawChart(st)};
+  drawChart(st);
   const am=$('#accMore');if(am)am.onclick=()=>{showAllAcc=!showAllAcc;vHome()};
 }
 // Chi theo nhóm: tổng chi, so với cùng kỳ tháng trước, thanh tỉ lệ + bảng nhóm
@@ -730,14 +847,84 @@ function catChart(st){
    <div class="legend-list">${st.cats.map(([c,v])=>`<div class="row"><i style="background:${CAT_COLOR[c]||CAT_COLOR['Khác']}"></i><span class="grow">${esc(c)}</span><span class="muted xs">${Math.round(v/st.out*100)}%</span><b class="num">${money(v)}</b></div>`).join('')}</div>
    <div class="xs muted" style="margin-top:10px">Trung bình ${money(Math.round(st.out/st.day))} ₫/ngày</div>`;
 }
-function weekChart(){
-  const WD=['CN','T2','T3','T4','T5','T6','T7'];
-  const dv=[...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6+i);const a=d.getTime(),b=a+86400000;
+// 7 ngày: Thu/Chi, mỗi chuỗi người dùng chọn Sóng hoặc Cột (nhớ lựa chọn)
+const CH={W:340,T:12,B:130,H:138};
+const chartType=()=>(S.chart=S.chart||{in:'wave',out:'wave'});
+const shortVND=n=>n>=1e9?+(n/1e9).toFixed(1)+' tỷ':n>=1e6?+(n/1e6).toFixed(1)+'tr':n>=1e3?Math.round(n/1e3)+'k':String(n);
+function niceMax(v){const p=10**Math.floor(Math.log10(v)),f=v/p;return p*([1,2,2.5,5,10].find(x=>x>=f)||10)}
+// đường cong đơn điệu (không vọt quá điểm dữ liệu, không lún dưới 0)
+function smoothPath(pts){
+  const n=pts.length,dx=[],m=[],t=[];
+  for(let i=0;i<n-1;i++){dx[i]=pts[i+1][0]-pts[i][0];m[i]=(pts[i+1][1]-pts[i][1])/dx[i]}
+  t[0]=m[0];t[n-1]=m[n-2];
+  for(let i=1;i<n-1;i++)t[i]=m[i-1]*m[i]<=0?0:(m[i-1]+m[i])/2;
+  for(let i=0;i<n-1;i++){if(!m[i]){t[i]=t[i+1]=0;continue}
+    const a=t[i]/m[i],b=t[i+1]/m[i],q=a*a+b*b;if(q>9){const k=3/Math.sqrt(q);t[i]=k*a*m[i];t[i+1]=k*b*m[i]}}
+  const f=v=>+v.toFixed(1);let d=`M${f(pts[0][0])},${f(pts[0][1])}`;
+  for(let i=0;i<n-1;i++){const h=dx[i]/3;d+=`C${f(pts[i][0]+h)},${f(pts[i][1]+t[i]*h)} ${f(pts[i+1][0]-h)},${f(pts[i+1][1]-t[i+1]*h)} ${f(pts[i+1][0])},${f(pts[i+1][1])}`}
+  return d;
+}
+function barPath(x,w,y){const h=CH.B-y,r=Math.min(4,w/2,h);
+  return `M${x},${CH.B}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${CH.B}Z`}
+function weekData(){
+  return [...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6+i);const a=d.getTime(),b=a+86400000;
     const l=S.tx.filter(t=>t.status==='confirmed'&&t.source!=='adjust'&&t.time>=a&&t.time<b);
-    return{d,i:l.filter(t=>t.dir==='in').reduce((s,t)=>s+t.amount,0),o:l.filter(t=>t.dir==='out').reduce((s,t)=>s+t.amount,0)}});
-  const mx=Math.max(1,...dv.map(x=>Math.max(x.i,x.o)));
-  return `<div class="bars" style="margin-top:14px">${dv.map((x,i)=>`<div class="bar ${i===6?'today':''}" title="Thu ${money(x.i)} · Chi ${money(x.o)}"><div class="st"><span class="bi" style="height:${x.i/mx*100}%"></span><span class="bo" style="height:${x.o/mx*100}%"></span></div><small>${i===6?'Nay':WD[x.d.getDay()]}</small></div>`).join('')}</div>
-   <div class="legend"><span><i style="background:var(--in)"></i>Thu</span><span><i style="background:var(--ink);opacity:.8"></i>Chi</span></div>`;
+    return{d,in:l.filter(t=>t.dir==='in').reduce((s,t)=>s+t.amount,0),out:l.filter(t=>t.dir==='out').reduce((s,t)=>s+t.amount,0)}});
+}
+let wkData=[];
+function weekChart(){
+  const WD=['CN','T2','T3','T4','T5','T6','T7'],ty=chartType(),dv=wkData=weekData();
+  const mx=niceMax(Math.max(1,...dv.map(x=>Math.max(x.in,x.out))));
+  const sw=CH.W/7,cx=i=>sw*(i+.5),y=v=>+(CH.B-v/mx*(CH.B-CH.T)).toFixed(1);
+  const SER={in:{c:'var(--in)',op:1},out:{c:'var(--ink)',op:.8}};
+  const bars=['in','out'].filter(k=>ty[k]==='bar'),waves=['in','out'].filter(k=>ty[k]==='wave');
+  const bw=bars.length===2?10:16;
+  let g=`<line x1="0" x2="${CH.W}" y1="${CH.T}" y2="${CH.T}" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <line x1="0" x2="${CH.W}" y1="${(CH.T+CH.B)/2}" y2="${(CH.T+CH.B)/2}" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <line x1="0" x2="${CH.W}" y1="${CH.B}" y2="${CH.B}" stroke="var(--line-2)"/>
+    ${S.hide?'':`<text x="0" y="${CH.T-3}" font-size="10" style="fill:var(--muted)">${shortVND(mx)}</text><text x="0" y="${(CH.T+CH.B)/2-3}" font-size="10" style="fill:var(--muted)">${shortVND(mx/2)}</text>`}
+    <defs>${['in','out'].map(k=>`<linearGradient id="wg-${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${SER[k].c};stop-opacity:.28"/><stop offset="1" style="stop-color:${SER[k].c};stop-opacity:0"/></linearGradient>`).join('')}</defs>`;
+  // cột: vẽ trước, nằm dưới sóng; hai chuỗi cột thì đứng cạnh nhau, cách 2px
+  bars.forEach((k,j)=>{const off=bars.length===2?(j?1:-bw-1):-bw/2;
+    g+=dv.map((x,i)=>x[k]?`<path class="wk-bar" data-i="${i}" d="${barPath(+(cx(i)+off).toFixed(1),bw,Math.min(y(x[k]),CH.B-3))}" style="fill:${SER[k].c};opacity:${SER[k].op};animation-delay:${i*35}ms"/>`:'').join('')});
+  // sóng: nền chuyển màu + viền nền 5px để tách khỏi cột bên dưới + đường 2px
+  waves.forEach(k=>{const pts=dv.map((x,i)=>[cx(i),y(x[k])]),d=smoothPath(pts);
+    g+=`<path class="wk-area" d="${d}L${cx(6)},${CH.B}L${cx(0)},${CH.B}Z" fill="url(#wg-${k})"/>
+      <path d="${d}" fill="none" stroke="var(--card)" stroke-width="5" stroke-linecap="round" class="wk-line" pathLength="1"/>
+      <path d="${d}" fill="none" stroke="${SER[k].c}" stroke-width="2" stroke-linecap="round" class="wk-line" pathLength="1" style="opacity:${k==='out'?.85:1}"/>`});
+  g+=`<g id="wkSel"></g>`;
+  const opt=(k,t,l,svg)=>`<button data-t="${t}" aria-pressed="${ty[k]===t}" aria-label="${k==='in'?'Thu':'Chi'}: ${l}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${svg}</svg>${l}</button>`;
+  const WAVE='<path d="M3 16c3 0 4-8 7-8s4 8 7 8 3-5 4-5"/>',COL='<path d="M6 20V11M12 20V5M18 20v-7"/>';
+  return `<div class="wk-read" id="wkRead"></div>
+   <div class="wk-plot"><svg id="wkSvg" viewBox="0 0 ${CH.W} ${CH.H}" role="img" aria-label="Thu chi 7 ngày: ${dv.map((x,i)=>`${i===6?'hôm nay':WD[x.d.getDay()]} thu ${fmt(x.in)}, chi ${fmt(x.out)}`).join('; ')}">${g}</svg></div>
+   <div class="wk-x">${dv.map((x,i)=>`<span class="${i===6?'today':''}">${i===6?'Nay':WD[x.d.getDay()]}</span>`).join('')}</div>
+   <div class="wk-ctl" id="wkCtl">${['in','out'].map(k=>`<div class="wk-k"><i class="sw" style="background:${SER[k].c};opacity:${SER[k].op}"></i><span class="lb">${k==='in'?'Thu':'Chi'}</span>
+     <div class="seg mini" data-s="${k}">${opt(k,'wave','Sóng',WAVE)}${opt(k,'bar','Cột',COL)}</div></div>`).join('')}</div>`;
+}
+// chạm/rê vào một ngày: vạch dọc + chấm + số liệu ngày đó; bỏ ra thì hiện tổng 7 ngày
+function weekSelect(i){
+  const r=$('#wkRead'),sel=$('#wkSel');if(!r||!sel)return;
+  const ty=chartType(),sw=CH.W/7,mx=niceMax(Math.max(1,...wkData.map(x=>Math.max(x.in,x.out))));
+  const y=v=>CH.B-v/mx*(CH.B-CH.T);
+  $('#wkSvg').querySelectorAll('.wk-bar').forEach(b=>b.style.opacity=i==null||+b.dataset.i===i?'':'.3');
+  if(i==null){const ti=wkData.reduce((s,x)=>s+x.in,0),to=wkData.reduce((s,x)=>s+x.out,0);
+    r.innerHTML=`<span class="d">7 ngày qua</span><span class="row num" style="gap:12px"><span class="in">+${money(ti)}</span><span>−${money(to)}</span></span>`;sel.innerHTML='';return}
+  const x=wkData[i],cx=sw*(i+.5);
+  r.innerHTML=`<span class="d">${i===6?'Hôm nay':x.d.toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'numeric'})}</span><span class="row num" style="gap:12px"><span class="in">+${money(x.in)}</span><span>−${money(x.out)}</span></span>`;
+  sel.innerHTML=`<line x1="${cx}" x2="${cx}" y1="${CH.T}" y2="${CH.B}" stroke="var(--line-2)" stroke-width="1.5"/>`+
+    ['in','out'].filter(k=>ty[k]==='wave').map(k=>`<circle cx="${cx}" cy="${y(x[k]).toFixed(1)}" r="4.5" style="fill:${k==='in'?'var(--in)':'var(--ink)'};stroke:var(--card)" stroke-width="2"/>`).join('');
+}
+function drawChart(st){
+  const c=$('#chart');c.innerHTML=homeChart==='cat'?catChart(st):weekChart();
+  if(homeChart!=='week')return;
+  weekSelect(null);
+  const svg=$('#wkSvg'),idx=e=>{const r=svg.getBoundingClientRect();return Math.min(6,Math.max(0,Math.floor((e.clientX-r.left)/r.width*7)))};
+  let cur=null;
+  svg.addEventListener('pointerdown',e=>{const i=idx(e);cur=e.pointerType==='mouse'||cur!==i?i:null;weekSelect(cur)});
+  svg.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){cur=idx(e);weekSelect(cur)}});
+  svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){cur=null;weekSelect(null)}});
+  $('#wkCtl').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const k=b.closest('[data-s]').dataset.s;
+    if(chartType()[k]===b.dataset.t)return;S.chart[k]=b.dataset.t;save();drawChart(st)};
 }
 function txRow(t){const s=t.dir==='in';
   return `<button class="li tx" onclick="openTx('${t.id}')"><span class="ic ${t.dir}">${ic(s?'in':'out',2)}</span>
@@ -747,6 +934,10 @@ function txRow(t){const s=t.dir==='in';
 // ---------- SEND ----------
 let sendState={step:'scan',amount:0,from:null,to:{bank:'',account:'',name:''},note:'',saveRcp:false,fromQR:false};
 function resetSend(){sendState={step:'scan',amount:0,from:sendState.from,to:{bank:'',account:'',name:''},note:'',saveRcp:false,fromQR:false}}
+// Người nhận quen: tự điền số tiền + nội dung lần trước (QR có sẵn thì QR được ưu tiên)
+function prefillLast(){const ss=sendState,l=S.lastSend?.[ss.to.bank+':'+ss.to.account];if(!l)return;
+  if(!ss.amount&&l.amount){ss.amount=l.amount;ss.prefill=l.amount}
+  if(!ss.note&&l.note)ss.note=l.note}
 let shownStep=null; // bước đang hiển thị, để biết chuyển tới hay lùi
 function vSend(){
   const ss=sendState;
@@ -766,11 +957,11 @@ function vScan(){
     <label class="btn">${ic('image')}Ảnh QR<input type="file" accept="image/*" id="qrFile" hidden></label>
     <button class="btn" id="manualBtn">${ic('pen')}Nhập tay</button></div>
   ${S.recipients.length?`<div class="sec"><h2>Chuyển gần đây</h2><button class="link" onclick="go('more')">Quản lý</button></div>
-   <div class="people">${S.recipients.map(x=>`<button data-r="${x.id}">${personAv(x.name)}<span class="n">${esc(x.name)}<small>${esc(bankName(x.bank))}</small></span></button>`).join('')}</div>`:''}`;
+   <div class="people">${[...S.recipients].sort((a,b)=>(S.lastSend?.[b.bank+':'+b.account]?.time||0)-(S.lastSend?.[a.bank+':'+a.account]?.time||0)).map(x=>`<button data-r="${x.id}">${personAv(x.name)}<span class="n">${esc(x.name)}<small>${esc(bankName(x.bank))}</small></span></button>`).join('')}</div>`:''}`;
   $('#qrFile').onchange=e=>{const f=e.target.files[0];if(f)decodeFile(f)};
   $('#manualBtn').onclick=()=>{stopCam();recipientSheet(true)};
   $('#view').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const x=S.recipients.find(y=>y.id===b.dataset.r);
-    Object.assign(sendState,{to:{bank:x.bank,account:x.account,name:x.name},fromQR:false,step:'amount'});stopCam();vSend()});
+    Object.assign(sendState,{to:{bank:x.bank,account:x.account,name:x.name},fromQR:false,step:'amount'});prefillLast();stopCam();vSend()});
   startCam();
 }
 // Bước 2: số tiền
@@ -815,7 +1006,7 @@ function key(k){const ss=sendState;let s=String(ss.amount||'');
   ss.amount=parseInt(s||'0',10);updateAmt()}
 function updateAmt(){const ss=sendState,r=ss.to,t=$('#amtTxt');if(!t)return;
   t.textContent=fmt(ss.amount);t.classList.toggle('zero',!ss.amount);
-  $('#amtWords').textContent=ss.amount?readVND(ss.amount):'Nhập số tiền';
+  $('#amtWords').textContent=ss.amount?(ss.prefill===ss.amount?'Như lần trước · ':'')+readVND(ss.amount):'Nhập số tiền';
   const c=$('#sgo'),ok=ss.amount&&r.account&&r.bank;
   c.textContent=!r.bank||!r.account?'Nhập thông tin người nhận':!ss.amount?'Nhập số tiền':`Chuyển ${fmt(ss.amount)} ₫`;
   c.classList.toggle('dim',!ok)}
@@ -843,7 +1034,7 @@ function recipientSheet(fromScan,d){
   $('#rsDone').onclick=()=>{const c=cur();
     if(!c.bank) return toast('Chọn ngân hàng');
     if(!/^\d{6,19}$/.test(c.account)) return toast('Số tài khoản gồm 6–19 chữ số');
-    sendState.to={bank:c.bank,account:c.account,name:c.name};sendState.saveRcp=c.save;sendState.step='amount';closeSheet();vSend()};
+    sendState.to={bank:c.bank,account:c.account,name:c.name};sendState.saveRcp=c.save;sendState.step='amount';prefillLast();closeSheet();vSend()};
 }
 function fromSheet(){
   const mine=[...new Set(S.accounts.map(a=>a.bank).concat(S.extraApps||[]))].filter(b=>BANKS[b]);
@@ -950,16 +1141,17 @@ function handleQR(text){
   sendState.to={bank:bankId,account:q.account||'',name:q.name||''};
   if(q.amount) sendState.amount=q.amount;
   if(q.note) sendState.note=q.note;
-  sendState.fromQR=true;sendState.saveRcp=false;sendState.step='amount';
+  sendState.fromQR=true;sendState.saveRcp=false;sendState.step='amount';prefillLast();
   closeSheet();vSend();
   if(!bankId||!q.account) setTimeout(()=>recipientSheet(false),300);
   toast(!bankId&&q.bin?`Chưa có ngân hàng mã ${q.bin} trong danh sách, chọn tay`:q.crcOk?'Đã đọc mã QR':'Đã đọc mã QR (mã kiểm tra không khớp, kiểm tra kỹ)');
 }
 function recordOpened(ss){
   const r=ss.to;
-  const t={id:uid(),dir:'out',amount:ss.amount,bank:ss.from,note:ss.note||('Chuyển cho '+(r.name||r.account)),peer:r.name,source:'quick',cat:'Khác',status:'opened',time:Date.now()};
+  const t={id:uid(),dir:'out',amount:ss.amount,bank:ss.from,note:ss.note||('Chuyển cho '+(r.name||r.account)),peer:r.name,source:'quick',cat:guessCat(ss.note||r.name,'out'),status:'opened',time:Date.now()};
   S.tx.push(t);
   if(ss.saveRcp&&!S.recipients.some(x=>x.account===r.account&&x.bank===r.bank))S.recipients.push({id:uid(),name:r.name||r.account,bank:r.bank,account:r.account});
+  S.lastSend=S.lastSend||{};S.lastSend[r.bank+':'+r.account]={amount:ss.amount,note:ss.note,time:t.time};
   save();awaiting={id:t.id,at:Date.now()};
 }
 const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -1049,18 +1241,30 @@ const SAMPLES=[
  {src:'notify',label:'Thông báo Timo (+)',text:'Timo: +150,000 VND tu LE VAN C. SD: 2,150,000 VND'},
  {src:'sms',label:'SMS TPBank (−)',text:'TPBank: (TK 0xxx567) -89,000VND 25/09/26 19:40 SD: 3,011,000VND ND: Grab'},
 ];
-function ingest(text,source,autoConfirm){
+// autoConfirm: true = người dùng bấm xác nhận, false = người dùng chọn để sau, bỏ trống = tự quyết theo cài đặt
+// opt.time: giờ dự phòng khi tin không ghi giờ; opt.quiet: nhập hàng loạt, không hiện thông báo từng tin
+function ingest(text,source,autoConfirm,opt={}){
   const p=parseMessage(text);
-  if(!p||!p.amount){toast('Không đọc được số tiền trong tin này');return null}
-  const t={id:uid(),dir:p.dir,amount:p.amount,bank:p.bank,note:p.note,balance:p.balance,raw:p.raw,source,cat:p.dir==='in'?'Khác':'Khác',status:'pending',time:p.time||Date.now()};
-  // match an opened quick transfer -> that transfer is now proven
-  const opened=S.tx.find(x=>x.status==='opened'&&x.dir===t.dir&&x.amount===t.amount&&(!t.bank||x.bank===t.bank)&&Math.abs(x.time-t.time)<=30*60000);
-  if(opened){opened.status='confirmed';opened.proof=source;save();render();toast('Đã khớp với lệnh chuyển nhanh → xác nhận tự động');return opened}
+  if(!p||!p.amount){opt.quiet||toast('Không đọc được số tiền trong tin này');return null}
+  const t={id:uid(),dir:p.dir,amount:p.amount,bank:p.bank,note:p.note,balance:p.balance,raw:p.raw,source,cat:guessCat(p.note,p.dir,p.raw),status:'pending',time:p.time||opt.time||Date.now()};
+  // tin báo khớp lệnh chuyển nhanh đã mở (±30 phút) hoặc khoản định kỳ (±3 ngày) → xác nhận luôn giao dịch đó, không tạo mới
+  const opened=S.tx.find(x=>x.dir===t.dir&&x.amount===t.amount&&(!t.bank||x.bank===t.bank)&&!x.proof&&(
+    (x.status==='opened'&&Math.abs(x.time-t.time)<=30*60000)||
+    (x.source==='recurring'&&Math.abs(x.time-t.time)<=3*86400000)));
+  if(opened){const rec=opened.source==='recurring';opened.status='confirmed';opened.proof=source;if(opened.balance==null)opened.balance=t.balance;
+    if(rec){opened.time=t.time;if(t.bank)opened.bank=t.bank}
+    const bd=noteBalance(t.bank||opened.bank,t.balance,t.time,opened.id);save();render();
+    opt.quiet||toast((rec?'Đã khớp với khoản định kỳ':'Đã khớp với lệnh chuyển nhanh')+' → xác nhận tự động'+(bd?'. '+balMsg(t.bank||opened.bank,bd):''),bd?5000:0);return opened}
   const d=findDuplicate(S.tx,t);
   if(d) t.dupOf=d.id;
-  if(autoConfirm&&!d&&t.dir) t.status='confirmed';
-  S.tx.push(t);save();renderTabs();
-  toast(t.status==='confirmed'?'Đã ghi giao dịch':d?'Có thể trùng, xem ở Lịch sử':'Đã thêm, xác nhận ở Lịch sử');
+  // tin rõ ràng: biết vào/ra, biết tài khoản đang theo dõi, không trùng
+  const clear=!d&&t.dir&&t.bank&&S.accounts.some(a=>a.bank===t.bank);
+  const auto=autoConfirm===undefined&&S.autoConfirm!==false&&clear;
+  if((autoConfirm&&!d&&t.dir)||auto) t.status='confirmed';
+  S.tx.push(t);
+  const bd=noteBalance(t.bank,t.balance,t.time,t.dupOf||t.id); // tin trùng: số dư đã tính qua giao dịch gốc
+  save();renderTabs();
+  opt.quiet||toast((auto?'Tin rõ ràng → đã tự ghi':t.status==='confirmed'?'Đã ghi giao dịch':d?'Có thể trùng, xem ở Lịch sử':'Đã thêm, xác nhận ở Lịch sử')+(bd?'. '+balMsg(t.bank,bd):''),bd?5000:0);
   return t;
 }
 function simulateNotification(){
@@ -1075,32 +1279,99 @@ function simulateNotification(){
   const done=()=>n.remove();
   n.querySelector('#nOk').onclick=()=>{ingest(s.text,'notify',true);done();render()};
   n.querySelector('#nLater').onclick=()=>{ingest(s.text,'notify',false);done();render()};
-  setTimeout(()=>{if(document.body.contains(n)){ingest(s.text,'notify',false);done();render()}},9000);
+  setTimeout(()=>{if(document.body.contains(n)){ingest(s.text,'notify');done();render()}},9000);
 }
+// ---------- nhập tin từ Phím tắt iPhone ----------
+// Phím tắt ghi nối mỗi thông báo vào SoTien.txt dạng:
+//   --- 2026-09-28T10:15:00+07:00 | Techcombank
+//   <nội dung thông báo>
+// App đọc cả file, chỉ nhập bản ghi chưa từng nhập (so theo mã băm).
+function parseStamp(s){s=stripVN(s||'').trim();if(!s)return null;let m;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)){const d=Date.parse(s.replace(' ','T'));if(!isNaN(d))return d}
+  if(m=s.match(/(\d{1,2})\s*(?:thg|thang)\s*(\d{1,2}),?\s*(\d{4})\D+(\d{1,2}):(\d{2})/i))return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5]).getTime();
+  if(m=s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})\D+(\d{1,2}):(\d{2})/))return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5]).getTime();
+  return null}
+function splitShortcutFile(txt){
+  txt=String(txt).replace(/^﻿/,'').replace(/\r/g,'');
+  if(!/^---/m.test(txt)) return txt.split(/\n\s*\n/).map(b=>({head:'',body:b.trim()})).filter(x=>x.body); // file không có dấu --- : mỗi đoạn là một tin
+  return txt.split(/^---+/m).slice(1).map(c=>{const i=c.indexOf('\n');return{head:(i<0?c:c.slice(0,i)).trim(),body:(i<0?'':c.slice(i+1)).trim()}}).filter(x=>x.body);
+}
+// bỏ OTP, khuyến mãi…; chỉ giữ tin trông giống biến động số dư
+const looksLikeTxn=s=>{const t=stripVN(s).toLowerCase();
+  return !/\botp\b|ma xac (thuc|nhan)|khuyen mai|uu dai|voucher|hoan tien toi/.test(t)&&/[+-]\s?\d[\d.,]{2,}|so du|\bsd\b|bien dong|giao dich|\bgd\b|nhan duoc|da nhan|ghi (co|no)/.test(t)};
+const hashStr=s=>{let h=5381;for(let i=0;i<s.length;i++)h=(h*33^s.charCodeAt(i))>>>0;return h.toString(36)+s.length.toString(36)};
+async function importShortcutFile(file){
+  let txt;try{txt=await file.text()}catch(e){toast('Không đọc được file. Chọn lại file SoTien.txt');return}
+  const recs=splitShortcutFile(txt);
+  if(!recs.length){toast('File trống. Kiểm tra lại Phím tắt đã ghi vào đúng file chưa',4000);return}
+  S.imported=S.imported||[];const seen=new Set(S.imported),r={ok:0,pend:0,skip:0,old:0};
+  recs.forEach(x=>{const h=hashStr(x.head+'\n'+x.body);if(seen.has(h)){r.old++;return}seen.add(h);S.imported.push(h);
+    const [stamp,...label]=x.head.split('|'),text=(label.join(' ').trim()+'\n'+x.body).trim();
+    if(!looksLikeTxn(text)){r.skip++;return}
+    const t=ingest(text,'shortcut',undefined,{time:parseStamp(stamp),quiet:true});
+    if(!t)r.skip++;else if(t.status==='confirmed')r.ok++;else r.pend++});
+  if(S.imported.length>3000)S.imported=S.imported.slice(-3000);
+  S.lastImport=Date.now();save();render();
+  const kv=(k,v)=>`<div class="kv"><span class="muted">${k}</span><span class="v num">${v}</span></div>`;
+  sheet(`<h3>Đã nhập từ Phím tắt</h3>
+   <div class="small muted">${recs.length} thông báo trong file · ${r.ok+r.pend} giao dịch mới</div>
+   <div class="card flush" style="margin-top:14px">${kv('Tự ghi',r.ok)}${kv('Chờ xác nhận',r.pend)}${kv('Bỏ qua (OTP, quảng cáo, không đọc được)',r.skip)}${kv('Đã nhập lần trước',r.old)}</div>
+   ${balIssues().length?`<div class="note">${balIssues().map(x=>esc(balMsg(x.bank,x.diff))).join('<br>')}</div>`:''}
+   <div class="stack">${r.pend?`<button class="btn primary block" onclick="closeSheet(true);go('list')">Xem ${r.pend} giao dịch chờ xác nhận</button>`:''}
+    <button class="btn ${r.pend?'ghost':'primary'} block" onclick="closeSheet()">Xong</button></div>`,{noFocus:true});
+}
+const importBtn=(cls,label)=>`<label class="${cls}">${ic('save')}${label}<input type="file" accept=".txt,text/plain" hidden onchange="if(this.files[0])importShortcutFile(this.files[0]);this.value=''"></label>`;
+function shortcutGuide(){
+  sheet(`<h3>Cài Phím tắt iPhone</h3>
+   <div class="small muted">Cần iOS có mục “Thông báo” trong Tự động hóa. Làm một lần cho mỗi app ngân hàng.</div>
+   <ol class="steps">
+    <li><span>Mở <b>Phím tắt</b> → <b>Tự động hóa</b> → <b>＋</b> → <b>Thông báo</b>. Chạm chữ <b>News</b>, đổi thành app ngân hàng. Chọn <b>Chạy ngay</b>.</span></li>
+    <li><span>Thêm hành động <b>Văn bản</b>, gõ 2 dòng:<br>dòng 1: <b>---</b> + biến <b>Ngày hiện tại</b> + <b>| tên ngân hàng</b><br>dòng 2: biến <b>Đầu vào phím tắt</b></span></li>
+    <li><span>Chạm vào biến Ngày hiện tại → <b>Định dạng ngày</b> → <b>ISO 8601</b> (để giờ giao dịch đúng khi nhập sau).</span></li>
+    <li><span>Thêm hành động <b>Thêm vào tệp văn bản</b>: nội dung là biến <b>Văn bản</b>, tên tệp <b>SoTien.txt</b>, bật <b>Tạo dòng mới</b>.</span></li>
+    <li><span>Mở Sổ Tiền → <b>Nhập tin từ Phím tắt</b> → chọn <b>iCloud Drive › Phím tắt › SoTien.txt</b>. Tin đã nhập sẽ không bị nhập lại.</span></li>
+   </ol>
+   <div class="card small" style="margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word">--- 2026-09-28T10:15:00+07:00 | Techcombank
+TK 19033xxxx8 -350,000 VND SD: 4,210,000 VND ND: an trua</div>
+   <div class="xs muted" style="margin:6px 2px 0">Mỗi thông báo được ghi vào file như trên.</div>
+   <div class="stack">${importBtn('btn primary block','Nhập tin từ Phím tắt')}<button class="btn ghost block" onclick="closeSheet()">Đóng</button></div>`,{noFocus:true});
+}
+
 function confirmTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;t.status='confirmed';delete t.dupOf;save();render();toast('Đã xác nhận')}
-function rejectTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;S.tx=S.tx.filter(x=>x.id!==id);save();render();toast('Đã bỏ')}
+function rejectTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;S.tx=S.tx.filter(x=>x.id!==id);
+  if(S.balSeen?.[t.bank]?.txId===id)delete S.balSeen[t.bank]; // tin bị bỏ thì số dư của nó cũng bỏ
+  save();render();toast('Đã bỏ')}
 function mergeTx(id){const t=S.tx.find(x=>x.id===id),d=t&&S.tx.find(x=>x.id===t.dupOf);if(!t)return;
   if(d&&d.status!=='confirmed')d.status='confirmed';if(d&&t.balance!=null&&d.balance==null)d.balance=t.balance;
   S.tx=S.tx.filter(x=>x.id!==id);save();render();toast('Đã gộp thành một giao dịch')}
 
 // ---------- manual / edit sheet ----------
-function txForm(t,title,onSave,head=''){
+function txForm(t,title,onSave,head='',foot=''){
   let dir=t.dir||'out';
   sheet(`<h3>${title}</h3>${head}
    <div class="seg" style="margin-top:12px" id="dirSeg"><button data-d="out" aria-pressed="${dir==='out'}">Tiền ra</button><button data-d="in" aria-pressed="${dir==='in'}">Tiền vào</button></div>
    <div style="margin-top:10px">${amountInput('tamt',t.amount)}</div>
    <label class="f" for="tbank">Tài khoản</label>
    <select class="input" id="tbank">${S.accounts.map(a=>`<option value="${a.bank}" ${t.bank===a.bank?'selected':''}>${esc(bankName(a.bank))}</option>`).join('')}</select>
-   <label class="f">Nhóm</label>
+   <label class="f" for="tnote">Ghi chú</label><input class="input" id="tnote" value="${esc(t.note||'')}" maxlength="80" placeholder="VD: Grab, tiền điện, ăn trưa">
+   <label class="f">Nhóm <span id="catAuto" style="font-weight:400"></span></label>
    <div class="chips" id="tcat">${CATS.map(c=>`<button class="chip" data-c="${c}" aria-pressed="${(t.cat||'Khác')===c}">${c}</button>`).join('')}</div>
-   <label class="f" for="tnote">Ghi chú</label><input class="input" id="tnote" value="${esc(t.note||'')}" maxlength="80">
+   ${foot}
    <div class="stack"><button class="btn primary block" id="tsave">Lưu</button><button class="btn ghost block" onclick="closeSheet()">Hủy</button></div>`);
   bindAmount('tamt');
-  let cat=t.cat||'Khác';
-  $('#dirSeg').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;dir=b.dataset.d;$('#dirSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))};
-  $('#tcat').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;cat=b.dataset.c;$('#tcat').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b))};
+  let cat=t.cat||'Khác',picked=!!t.cat; // chưa tự chọn nhóm thì app tự gợi ý theo ghi chú
+  const setCat=c=>{cat=c;const box=$('#tcat');box.querySelectorAll('.chip').forEach(x=>{x.setAttribute('aria-pressed',x.dataset.c===c);
+    if(x.dataset.c===c&&(x.offsetLeft<box.scrollLeft||x.offsetLeft+x.offsetWidth>box.scrollLeft+box.clientWidth))box.scrollTo({left:x.offsetLeft-16,behavior:'smooth'})})};
+  const auto=()=>{if(picked)return;const n=$('#tnote').value.trim(),g=n?guessCat(n,dir):'Khác';setCat(g);$('#catAuto').textContent=g!=='Khác'?'· tự chọn theo ghi chú':''};
+  $('#tnote').addEventListener('input',auto);
+  setCat(cat); // cuộn tới nhóm đang chọn nếu nó nằm khuất
+  $('#dirSeg').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;dir=b.dataset.d;$('#dirSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));auto()};
+  $('#tcat').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;picked=true;$('#catAuto').textContent='';setCat(b.dataset.c)};
   $('#tsave').onclick=()=>{const amount=getAmt('tamt');if(!amount)return toast('Nhập số tiền');
-    onSave({dir,amount,bank:$('#tbank').value,cat,note:$('#tnote').value.trim()});closeSheet()};
+    const v={dir,amount,bank:$('#tbank').value,cat,note:$('#tnote').value.trim()};
+    const changed=t.id?cat!==(t.cat||'Khác'):picked; // chỉ học khi người dùng thật sự đổi nhóm
+    const n=v.note&&changed?learnCat(v.note,dir,cat,t.id):0;
+    onSave(v);closeSheet();if(n)setTimeout(()=>toast(`Đã nhớ nhóm “${cat}”, đổi thêm ${n} giao dịch tương tự`,3500),300)};
 }
 $('#fab').innerHTML=ic('plus',2.2);
 $('#fab').onclick=()=>addSheet();
@@ -1114,7 +1385,10 @@ function openTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;
     ${kv('Ghi chú',esc(t.note||'—'))}${kv('Tài khoản',esc(bankName(t.bank)))}${kv('Thời gian',new Date(t.time).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}))}
     ${kv('Nguồn',SRC[t.source]+(t.proof?' · khớp '+SRC[t.proof]:''))}${kv('Nhóm',esc(t.cat||'Khác'))}</div>
    ${t.raw?`<div class="pend" style="padding:0;box-shadow:none;background:none"><div class="raw">${esc(t.raw)}</div></div>`:''}
-   <div class="row" style="margin-top:16px;gap:8px"><button class="btn grow" onclick="closeSheet();editTx('${id}')">Sửa</button><button class="btn danger grow" onclick="if(confirm('Xóa giao dịch này?')){S.tx=S.tx.filter(x=>x.id!=='${id}');save();closeSheet();render()}">Xóa</button></div>`,{noFocus:true})}
+   ${t.source==='adjust'?'':(()=>{const r=t.recId&&(S.recurring||[]).find(x=>x.id===t.recId);
+     return r?`<button class="pending-bar" style="background:var(--card);color:var(--ink-2)" onclick="recurringSheet('${r.id}')">${ic('repeat')}<span class="grow">${recLabel(r,true)}</span>${ic('chev')}</button>`
+       :`<button class="btn block" style="margin-top:12px" onclick="recurringSheet(null,S.tx.find(x=>x.id==='${id}'))">${ic('repeat')}Lặp lại hằng tháng</button>`})()}
+   <div class="row" style="margin-top:12px;gap:8px"><button class="btn grow" onclick="closeSheet();editTx('${id}')">Sửa</button><button class="btn danger grow" onclick="if(confirm('Xóa giao dịch này?')){S.tx=S.tx.filter(x=>x.id!=='${id}');save();closeSheet();render()}">Xóa</button></div>`,{noFocus:true})}
 
 // ---------- LIST (kèm giao dịch cần xác nhận ở đầu) ----------
 let listFilter='all',listBank='all';
@@ -1139,7 +1413,7 @@ function pendCard(t){
   return `<div class="pend ${dup?'dup':''}">
    <div class="row between"><span class="row" style="gap:10px;min-width:0">${t.bank?bankLogo(t.bank,'sm'):''}<span class="ell small" style="font-weight:500">${esc(t.note||bankName(t.bank))}</span></span>
      <span class="big num ${t.dir==='in'?'in':''}">${t.dir==='in'?'+':t.dir==='out'?'−':'?'}${fmt(t.amount)}</span></div>
-   <div class="row xs muted" style="margin-top:6px;gap:6px"><span class="tag ${opened?'warn':''}">${opened?'Đã mở lệnh chuyển':SRC[t.source]}</span>${hm(t.time)}${t.balance!=null?` · Số dư ${fmt(t.balance)} ₫`:''}</div>
+   <div class="row xs muted" style="margin-top:6px;gap:6px"><span class="tag ${opened?'warn':''}">${opened?'Đã mở lệnh chuyển':SRC[t.source]}</span><span class="tag">${esc(t.cat||'Khác')}</span>${hm(t.time)}${t.balance!=null?` · Số dư ${fmt(t.balance)} ₫`:''}</div>
    ${!t.dir?'<div class="note">Không rõ tiền vào hay ra. Chạm Sửa để chọn.</div>':''}
    ${dup?`<div class="note">Có thể trùng với ${dup.dir==='in'?'+':'−'}${fmt(dup.amount)} ₫ (${SRC[dup.source]}, ${hm(dup.time)}).</div>`:''}
    ${t.raw?`<details class="raw-d"><summary>Tin gốc</summary><div class="raw">${esc(t.raw)}</div></details>`:''}
@@ -1161,11 +1435,11 @@ function addSheet(mode){
      <div class="chips" style="margin-top:10px" id="srcChips">${['sms','email','notify'].map(s=>`<button class="chip" data-src="${s}" aria-pressed="${pasteSrc===s}">${SRC[s]}</button>`).join('')}</div>
      <label class="f">Mẫu thử</label>
      <div class="chips">${SAMPLES.map((s,i)=>`<button class="chip" data-sample="${i}">${esc(s.label)}</button>`).join('')}</div>
-     <div class="stack"><button class="btn primary block" id="doParse">Đọc tin</button><button class="btn ghost block" id="simNotif">Giả lập thông báo đến</button></div>`);
+     <div class="stack"><button class="btn primary block" id="doParse">Đọc tin</button>${importBtn('btn block','Nhập tin từ Phím tắt')}<button class="btn ghost block" id="simNotif">Giả lập thông báo đến</button></div>`);
     const setSrc=s=>{pasteSrc=s;$('#srcChips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.src===s))};
     $('#srcChips').onclick=e=>{const b=e.target.closest('[data-src]');if(b)setSrc(b.dataset.src)};
     $('#layer').querySelectorAll('[data-sample]').forEach(b=>b.onclick=()=>{const s=SAMPLES[+b.dataset.sample];$('#rawIn').value=s.text;setSrc(s.src)});
-    $('#doParse').onclick=()=>{if(ingest($('#rawIn').value,pasteSrc,false)){closeSheet();render()}};
+    $('#doParse').onclick=()=>{if(ingest($('#rawIn').value,pasteSrc)){closeSheet();render()}};
     $('#simNotif').onclick=()=>{closeSheet();simulateNotification()};
   }
   $('#am').onclick=e=>{const b=e.target.closest('[data-m]');if(b&&b.dataset.m!==addMode)addSheet(b.dataset.m)};
@@ -1175,10 +1449,18 @@ function addSheet(mode){
 function vMore(){
   $('#view').innerHTML=`
   <div class="sec" style="margin-top:8px"><h2>Đối soát số dư</h2></div>
-  <div class="card"><div class="small muted">Nhập số dư thật trong app ngân hàng để tìm giao dịch bị sót.</div>
+  <div class="card"><div class="small muted">Tin nhắn có số dư (SD) sẽ được tự đối soát. Hoặc nhập số dư thật trong app ngân hàng để kiểm tra tay.</div>
    <label class="f" for="rcBank">Tài khoản</label><select class="input" id="rcBank">${S.accounts.map(a=>`<option value="${a.bank}">${esc(bankName(a.bank))} · app tính ${money(balanceOf(a.bank))} ₫</option>`).join('')}</select>
    <label class="f">Số dư thực tế</label>${amountInput('rcAmt',0)}
    <button class="btn primary block" style="margin-top:12px" id="rcGo">So sánh</button><div id="rcOut"></div></div>
+  <div class="sec"><h2>Tự động</h2></div>
+  <div class="card flush"><label class="switch"><span class="grow"><div class="t" style="font-weight:500">Tự xác nhận tin rõ ràng</div><div class="s small muted">Tin biết rõ vào/ra, đúng tài khoản, không trùng thì ghi luôn, không cần bấm Xác nhận</div></span><input type="checkbox" id="autoC" ${S.autoConfirm!==false?'checked':''}></label></div>
+  <div class="sec"><h2>Phím tắt iPhone</h2><button class="link" onclick="shortcutGuide()">Cách cài</button></div>
+  <div class="card"><div class="small muted">Phím tắt tự ghi thông báo ngân hàng vào file SoTien.txt. Mở app, bấm nút dưới để nhập các tin mới.${S.lastImport?` Lần nhập gần nhất: ${new Date(S.lastImport).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})}.`:''}</div>
+   <div style="margin-top:12px">${importBtn('btn primary block','Nhập tin từ Phím tắt')}</div></div>
+  <div class="sec"><h2>Định kỳ hằng tháng</h2><button class="link" onclick="recurringSheet()">Thêm</button></div>
+  <div class="card flush">${(S.recurring||[]).length?S.recurring.map(r=>`<button class="li" onclick="recurringSheet('${r.id}')"><span class="ic" style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--field);color:var(--ink-2)">${ic('repeat')}</span><span class="grow"><div class="t ell">${esc(r.note||r.cat)}</div><div class="s ell">${recLabel(r)}</div></span><span class="num ${r.dir==='in'?'in':''}" style="font-weight:600">${r.dir==='in'?'+':'−'}${fmt(r.amount)}</span></button>`).join('')
+    :'<div class="empty" style="padding:20px 16px">Tiền nhà, lương, điện nước… Mở một giao dịch và chọn “Lặp lại hằng tháng”.</div>'}</div>
   <div class="sec"><h2>Người nhận đã lưu</h2><button class="link" onclick="editRecipient()">Thêm</button></div>
   <div class="card flush">${S.recipients.length?S.recipients.map(r=>`<button class="li" onclick="editRecipient('${r.id}')">${personAv(r.name,r.bank)}<span class="grow"><div class="t ell">${esc(r.name)}</div><div class="s ell mono">${esc(bankName(r.bank))} · ${esc(r.account)}</div></span><span class="chev">${ic('chev')}</span></button>`).join(''):'<div class="empty">Chưa có người nhận.</div>'}</div>
   <div class="sec"><h2>Tài khoản & số dư đầu kỳ</h2><button class="link" id="addAcc">Thêm</button></div>
@@ -1187,6 +1469,7 @@ function vMore(){
   <div class="row" style="gap:8px"><button class="btn grow" id="dSample">Nạp dữ liệu mẫu</button><button class="btn grow" id="dClear" style="color:var(--out)">Xóa sạch</button></div>
   <p class="xs muted" style="margin:18px 4px 0;line-height:1.55">Dữ liệu chỉ lưu trên trình duyệt này. Đọc thông báo tự động cần app Android; trên iPhone dùng Phím tắt đọc SMS hoặc email chuyển tiếp. Danh sách ${Object.keys(BANKS).length} ngân hàng/ví theo VietQR.</p>`;
   bindAmount('rcAmt');
+  $('#autoC').onchange=e=>{S.autoConfirm=e.target.checked;save();toast(e.target.checked?'Đã bật tự xác nhận':'Đã tắt, mọi tin sẽ chờ xác nhận')};
   $('#rcGo').onclick=()=>{const bank=$('#rcBank').value,actual=getAmt('rcAmt'),calc=balanceOf(bank),diff=actual-calc;
     $('#rcOut').innerHTML=diff===0?`<div class="note good">Khớp. Không sót giao dịch nào.</div>`:
     `<div class="note">Lệch ${diff>0?'+':'−'}${fmt(Math.abs(diff))} ₫: có thể sót ${diff>0?'tiền vào':'tiền ra'} chưa ghi.</div>
@@ -1254,10 +1537,19 @@ function closeSheet(instant){
   addEventListener('pointerup',end);addEventListener('pointercancel',end);
 })();
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+// Khóa zoom: iOS Safari bỏ qua user-scalable=no nên chặn cử chỉ chụm/phóng (chạm đúp đã chặn bằng touch-action); máy tính chặn Ctrl + cuộn / Ctrl +/-
+(()=>{const no=e=>e.preventDefault();
+  ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,no,{passive:false}));
+  document.addEventListener('touchmove',e=>{if(e.touches.length>1||(e.scale&&e.scale!==1))e.preventDefault()},{passive:false});
+  addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
+  addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&/^(=|\+|-|_|0)$/.test(e.key))e.preventDefault()});
+})();
 function copy(s){const done=()=>toast('Đã chép '+s);
   if(navigator.clipboard)navigator.clipboard.writeText(s).then(done,()=>fallback());else fallback();
   function fallback(){const t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();try{document.execCommand('copy');done()}catch(e){toast('Không chép được')}t.remove()}}
 
+runRecurring();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&runRecurring())render()});
 render();
 </script>
 </body>
