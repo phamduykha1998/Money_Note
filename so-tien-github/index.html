@@ -1286,11 +1286,19 @@ function simulateNotification(){
 //   --- 2026-09-28T10:15:00+07:00 | Techcombank
 //   <nội dung thông báo>
 // App đọc cả file, chỉ nhập bản ghi chưa từng nhập (so theo mã băm).
-function parseStamp(s){s=stripVN(s||'').trim();if(!s)return null;let m;
-  if(/^\d{4}-\d{2}-\d{2}/.test(s)){const d=Date.parse(s.replace(' ','T'));if(!isNaN(d))return d}
-  if(m=s.match(/(\d{1,2})\s*(?:thg|thang)\s*(\d{1,2}),?\s*(\d{4})\D+(\d{1,2}):(\d{2})/i))return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5]).getTime();
-  if(m=s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})\D+(\d{1,2}):(\d{2})/))return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5]).getTime();
-  return null}
+// Ngày giờ ở dòng ---: nhận cả định dạng mặc định của iPhone (tiếng Việt / tiếng Anh) lẫn ISO 8601
+const MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function parseStamp(s){s=stripVN(s||'').trim();if(!s)return null;let m,y,mo,d;
+  if(/^\d{4}-\d{2}-\d{2}T/.test(s)){const t=Date.parse(s);if(!isNaN(t))return t}
+  if((m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/))){y=+m[1];mo=+m[2];d=+m[3]}
+  else if((m=s.match(/(\d{1,2})\s*(?:thg|thang)\s*(\d{1,2}),?\s*(?:nam\s*)?(\d{4})/i))){d=+m[1];mo=+m[2];y=+m[3]}
+  else if((m=s.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/))){d=+m[1];mo=+m[2];y=+m[3];if(mo>12)[d,mo]=[mo,d]}
+  else if((m=s.match(/\b([a-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})/i))&&MON[m[1].toLowerCase()]){mo=MON[m[1].toLowerCase()];d=+m[2];y=+m[3]}
+  else if((m=s.match(/(\d{1,2})\s+([a-z]{3})[a-z]*\.?,?\s+(\d{4})/i))&&MON[m[2].toLowerCase()]){d=+m[1];mo=MON[m[2].toLowerCase()];y=+m[3]}
+  else return null;
+  let h=0,mi=0;const t=s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm|sa|ch)?/i);
+  if(t){h=+t[1];mi=+t[2];const ap=(t[3]||'').toLowerCase();if((ap==='pm'||ap==='ch')&&h<12)h+=12;if((ap==='am'||ap==='sa')&&h===12)h=0}
+  const r=new Date(y,mo-1,d,h,mi).getTime();return isNaN(r)?null:r}
 function splitShortcutFile(txt){
   txt=String(txt).replace(/^﻿/,'').replace(/\r/g,'');
   if(!/^---/m.test(txt)) return txt.split(/\n\s*\n/).map(b=>({head:'',body:b.trim()})).filter(x=>x.body); // file không có dấu --- : mỗi đoạn là một tin
@@ -1325,13 +1333,17 @@ function shortcutGuide(){
   sheet(`<h3>Cài Phím tắt iPhone</h3>
    <div class="small muted">Cần iOS có mục “Thông báo” trong Tự động hóa. Làm một lần cho mỗi app ngân hàng.</div>
    <ol class="steps">
-    <li><span>Mở <b>Phím tắt</b> → <b>Tự động hóa</b> → <b>＋</b> → <b>Thông báo</b>. Chạm chữ <b>News</b>, đổi thành app ngân hàng. Chọn <b>Chạy ngay</b>.</span></li>
-    <li><span>Thêm hành động <b>Văn bản</b>, gõ 2 dòng:<br>dòng 1: <b>---</b> + biến <b>Ngày hiện tại</b> + <b>| tên ngân hàng</b><br>dòng 2: biến <b>Đầu vào phím tắt</b></span></li>
-    <li><span>Chạm vào biến Ngày hiện tại → <b>Định dạng ngày</b> → <b>ISO 8601</b> (để giờ giao dịch đúng khi nhập sau).</span></li>
-    <li><span>Thêm hành động <b>Thêm vào tệp văn bản</b>: nội dung là biến <b>Văn bản</b>, tên tệp <b>SoTien.txt</b>, bật <b>Tạo dòng mới</b>.</span></li>
-    <li><span>Mở Sổ Tiền → <b>Nhập tin từ Phím tắt</b> → chọn <b>iCloud Drive › Phím tắt › SoTien.txt</b>. Tin đã nhập sẽ không bị nhập lại.</span></li>
+    <li><span>Mở app <b>Phím tắt</b> → tab <b>Tự động hóa</b> → <b>＋</b> → <b>Thông báo</b>.</span></li>
+    <li><span>Chạm chữ <b>News</b> → chọn app ngân hàng. Chọn <b>Chạy ngay</b> → <b>Tiếp</b>.</span></li>
+    <li><span>Chọn <b>Tự động hóa trống mới</b>. Ô tìm kiếm gõ <b>tệp văn bản</b> → chọn <b>Thêm vào tệp văn bản</b>.</span></li>
+    <li><span>Chạm ô <b>Văn bản</b> và gõ đúng 2 dòng:<br>
+      dòng 1: <b>---</b> cách, chạm <b>Ngày hiện tại</b> ở thanh trên bàn phím, gõ <b>| Techcombank</b> (tên ngân hàng của bạn)<br>
+      dòng 2: chạm <b>Đầu vào phím tắt</b> (hoặc <b>Thông báo</b>)</span></li>
+    <li><span>Chạm mũi tên <b>›</b> của hành động: tên tệp gõ <b>SoTien.txt</b>, bật <b>Tạo dòng mới</b>. Bấm <b>Xong</b>.</span></li>
+    <li><span>Có giao dịch: mở Sổ Tiền → <b>Nhập tin từ Phím tắt</b> → <b>iCloud Drive › Phím tắt › SoTien.txt</b>.</span></li>
    </ol>
-   <div class="card small" style="margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word">--- 2026-09-28T10:15:00+07:00 | Techcombank
+   <div class="xs muted" style="margin:10px 2px 0">Tên nút trên máy bạn có thể khác một chút tùy phiên bản iOS. Mỗi app ngân hàng làm lại một lần.</div>
+   <div class="card small" style="margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word">--- 28 thg 9, 2026 lúc 10:15 | Techcombank
 TK 19033xxxx8 -350,000 VND SD: 4,210,000 VND ND: an trua</div>
    <div class="xs muted" style="margin:6px 2px 0">Mỗi thông báo được ghi vào file như trên.</div>
    <div class="stack">${importBtn('btn primary block','Nhập tin từ Phím tắt')}<button class="btn ghost block" onclick="closeSheet()">Đóng</button></div>`,{noFocus:true});
