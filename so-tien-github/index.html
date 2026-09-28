@@ -253,6 +253,9 @@ details.more summary::-webkit-details-marker{display:none}
 .pending-bar{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:11px 13px;margin-top:14px;font-weight:500;font-size:14px;text-align:left}
 .pending-bar svg{width:18px;height:18px;flex:none}
 .pending-bar svg:last-child{margin-left:auto}
+.own-t{margin-top:10px;background:var(--good-bg);border-radius:12px;padding:10px 14px}
+.own-t b{display:block;font-size:14px;font-weight:600;color:var(--in)}
+.own-t small{display:block;font-size:12px;color:var(--muted)}
 .import-bar{background:var(--field);color:var(--ink-2);cursor:pointer}
 /* biểu đồ 7 ngày: mỗi chuỗi (thu/chi) chọn sóng hoặc cột */
 .wk-read{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:14px;min-height:22px;font-size:13.5px;font-weight:600}
@@ -597,7 +600,8 @@ const fmt=n=>(Math.round(n)||0).toLocaleString('vi-VN');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 const SRC={quick:'Chuyển nhanh',sms:'SMS',email:'Email',notify:'Thông báo',manual:'Nhập tay',adjust:'Điều chỉnh',recurring:'Định kỳ',shortcut:'Phím tắt'};
-const CATS=['Ăn uống','Di chuyển','Mua sắm','Hóa đơn','Nhà ở','Lương','Khác'];
+const CATS=['Ăn uống','Di chuyển','Mua sắm','Hóa đơn','Nhà ở','Lương','Khác','Chuyển nội bộ'];
+const INTERNAL='Chuyển nội bộ'; // chuyển giữa các tài khoản của chính mình: không tính là thu/chi
 const bankName=id=>BANKS[id]?.name||'Không rõ';
 function dayLabel(t){const d=new Date(t),n=new Date();const k=x=>x.toDateString();
   if(k(d)===k(n))return 'Hôm nay';const y=new Date(n-86400000);if(k(d)===k(y))return 'Hôm qua';
@@ -672,6 +676,19 @@ function recurringSheet(id,from){
   if(r)$('#rDel').onclick=()=>{if(!confirm('Xóa khoản định kỳ này? Các giao dịch đã ghi vẫn giữ lại.'))return;S.recurring=S.recurring.filter(x=>x.id!==id);save();closeSheet();render()};
 }
 
+// ---------- chuyển giữa tài khoản của mình: nhận ra theo số tài khoản đã lưu hoặc tên chủ tài khoản ----------
+const normName=s=>stripVN(s||'').toUpperCase().replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim();
+const ownerName=()=>{const o=normName(S.owner);return o.split(' ').length>=2?o:''}; // cần đủ họ + tên, tránh khớp nhầm
+// 'account' = trùng số tài khoản đã lưu (chắc chắn) · 'name' = tên trên QR trùng đúng tên chủ tài khoản · null
+function ownMatch(to){
+  if(to.account&&S.accounts.some(a=>a.number&&a.number===to.account&&a.bank===to.bank)) return 'account';
+  const o=ownerName();
+  if(o&&to.name&&normName(to.name)===o) return 'name';
+  return null;
+}
+// tin nhắn có tên chủ tài khoản đứng riêng (VD "tu PHAM DUY KHA", "PHAM DUY KHA chuyen tien")
+function ownInText(raw){const o=ownerName();return !!o&&(' '+normName(raw)+' ').includes(' '+o+' ')}
+
 // ---------- tự đối soát: số dư trong tin nhắn ngân hàng so với số dư app tính ----------
 // Số dư app tính tới thời điểm tin nhắn (tin chỉ ghi tới phút nên tính trọn phút đó); extraId = giao dịch của chính tin nhắn
 function balanceAt(bank,time,extraId){const a=S.accounts.find(x=>x.bank===bank);let b=a?a.opening:0;
@@ -722,6 +739,7 @@ const ICONS={
  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
  eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
  eyeOff:'<path d="M4 4l16 16M10.6 6.1A9 9 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.7 3.4M6.6 7.6A16 16 0 0 0 2.5 12S6 18 12 18a9 9 0 0 0 4-.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/>', alert:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.5M12 15.8h.01"/>',
+ swap:'<path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/>',
  repeat:'<path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/>',
 };
 const ic=(n,sw)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.8}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
@@ -797,12 +815,12 @@ buildNav();
 // Ẩn/hiện số tiền trên Tổng quan (nhớ lựa chọn). money() dùng cho mọi con số tài sản.
 const money=(n,sign='')=>S.hide?'••••••':sign+fmt(n);
 function toggleHide(){S.hide=!S.hide;save();render()}
-const CAT_COLOR={'Ăn uống':'#E07A3F','Di chuyển':'#3E7FC1','Mua sắm':'#A15BC4','Hóa đơn':'#D2A02A','Nhà ở':'#2E9C82','Lương':'#0D7A4E','Khác':'#9AA0A6'};
+const CAT_COLOR={'Ăn uống':'#E07A3F','Di chuyển':'#3E7FC1','Mua sắm':'#A15BC4','Hóa đơn':'#D2A02A','Nhà ở':'#2E9C82','Lương':'#0D7A4E','Khác':'#9AA0A6','Chuyển nội bộ':'#6B7280'};
 let homeChart='cat',showAllAcc=false;
 function monthStats(){
   const now=new Date(),y=now.getFullYear(),m=now.getMonth(),day=now.getDate();
   const m0=new Date(y,m,1).getTime(),p0=new Date(y,m-1,1).getTime(),pCut=new Date(y,m-1,day+1).getTime();
-  const ok=t=>t.status==='confirmed'&&t.source!=='adjust';
+  const ok=t=>t.status==='confirmed'&&t.source!=='adjust'&&t.cat!==INTERNAL;
   const cur=S.tx.filter(t=>ok(t)&&t.time>=m0), prevOut=S.tx.filter(t=>ok(t)&&t.dir==='out'&&t.time>=p0&&t.time<Math.min(pCut,m0)).reduce((s,t)=>s+t.amount,0);
   const sum=(l,d)=>l.filter(t=>t.dir===d).reduce((s,t)=>s+t.amount,0);
   const out=sum(cur,'out'),cats={};
@@ -868,7 +886,7 @@ function barPath(x,w,y){const h=CH.B-y,r=Math.min(4,w/2,h);
   return `M${x},${CH.B}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${CH.B}Z`}
 function weekData(){
   return [...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6+i);const a=d.getTime(),b=a+86400000;
-    const l=S.tx.filter(t=>t.status==='confirmed'&&t.source!=='adjust'&&t.time>=a&&t.time<b);
+    const l=S.tx.filter(t=>t.status==='confirmed'&&t.source!=='adjust'&&t.cat!==INTERNAL&&t.time>=a&&t.time<b);
     return{d,in:l.filter(t=>t.dir==='in').reduce((s,t)=>s+t.amount,0),out:l.filter(t=>t.dir==='out').reduce((s,t)=>s+t.amount,0)}});
 }
 let wkData=[];
@@ -926,10 +944,10 @@ function drawChart(st){
   $('#wkCtl').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const k=b.closest('[data-s]').dataset.s;
     if(chartType()[k]===b.dataset.t)return;S.chart[k]=b.dataset.t;save();drawChart(st)};
 }
-function txRow(t){const s=t.dir==='in';
-  return `<button class="li tx" onclick="openTx('${t.id}')"><span class="ic ${t.dir}">${ic(s?'in':'out',2)}</span>
+function txRow(t){const s=t.dir==='in',own=t.cat===INTERNAL;
+  return `<button class="li tx" onclick="openTx('${t.id}')"><span class="ic ${own?'':t.dir}">${ic(own?'swap':s?'in':'out',2)}</span>
   <span class="grow"><div class="t ell">${esc(t.note||(s?'Tiền vào':'Tiền ra'))}</div><div class="s ell">${esc(BANKS[t.bank]?.name||'?')} · ${hm(t.time)} · ${SRC[t.source]||''}</div></span>
-  <span class="amt num ${t.dir}">${s?'+':'−'}${fmt(t.amount)}</span></button>`}
+  <span class="amt num ${own?'muted':t.dir}">${s?'+':'−'}${fmt(t.amount)}</span></button>`}
 
 // ---------- SEND ----------
 let sendState={step:'scan',amount:0,from:null,to:{bank:'',account:'',name:''},note:'',saveRcp:false,fromQR:false};
@@ -968,6 +986,9 @@ function vScan(){
 function vAmount(){
   const ss=sendState, r=ss.to, rb=BANKS[r.bank], src=BANKS[ss.from];
   const missRcp=[!r.bank&&'ngân hàng',!r.account&&'số tài khoản'].filter(Boolean);
+  // đổi người nhận → xét lại có phải tài khoản của mình không (mặc định bật khi nhận ra)
+  const ownHit=ownMatch(r),key=r.bank+':'+r.account+':'+r.name;
+  if(ss.ownKey!==key){ss.ownKey=key;ss.internal=!!ownHit}
   $('#view').innerHTML=`<div class="amt-screen">
   <div class="rcp">
     <button class="icon-btn back" id="backBtn" aria-label="Quay lại">${ic('back',2)}</button>
@@ -976,6 +997,7 @@ function vAmount(){
     <button class="link" id="editRcp">Sửa</button>
   </div>
   ${missRcp.length?`<button class="miss" id="missBtn">Thiếu ${missRcp.join(' và ')}. Chạm để nhập</button>`:''}
+  ${ownHit?`<label class="switch own-t"><span class="grow"><b>Chuyển giữa tài khoản của bạn</b><small>${ownHit==='account'?'Trùng số tài khoản bạn đã lưu':'Tên trên mã QR trùng tên chủ tài khoản'} · không tính vào chi tiêu</small></span><input type="checkbox" id="ownT" ${ss.internal?'checked':''}></label>`:''}
   <div class="hero" aria-live="polite">
     <div class="hero-amt num"><span id="amtTxt">${fmt(ss.amount)}</span><span class="cur">₫</span></div>
     <div class="words" id="amtWords"></div>
@@ -995,6 +1017,7 @@ function vAmount(){
   const mb=$('#missBtn');if(mb)mb.onclick=()=>recipientSheet(false);
   $('#fromBtn').onclick=fromSheet;
   $('#snote').oninput=e=>ss.note=e.target.value;
+  const ot=$('#ownT');if(ot)ot.onchange=e=>ss.internal=e.target.checked;
   $('#sgo').onclick=()=>{
     if(!r.account||!r.bank) return recipientSheet(false);
     if(!/^\d{6,19}$/.test(r.account)) return toast('Số tài khoản chưa hợp lệ');
@@ -1148,8 +1171,12 @@ function handleQR(text){
 }
 function recordOpened(ss){
   const r=ss.to;
-  const t={id:uid(),dir:'out',amount:ss.amount,bank:ss.from,note:ss.note||('Chuyển cho '+(r.name||r.account)),peer:r.name,source:'quick',cat:guessCat(ss.note||r.name,'out'),status:'opened',time:Date.now()};
+  const own=ss.internal;
+  const t={id:uid(),dir:'out',amount:ss.amount,bank:ss.from,note:ss.note||(own?'Chuyển sang '+bankName(r.bank):'Chuyển cho '+(r.name||r.account)),peer:r.name,source:'quick',cat:own?INTERNAL:guessCat(ss.note||r.name,'out'),status:'opened',time:Date.now()};
   S.tx.push(t);
+  // tài khoản nhận cũng đang theo dõi → tạo luôn khoản vào, tin báo có tiền sẽ tự khớp
+  if(own&&r.bank!==ss.from&&S.accounts.some(a=>a.bank===r.bank))
+    S.tx.push({id:uid(),dir:'in',amount:ss.amount,bank:r.bank,note:'Nhận từ '+bankName(ss.from),source:'quick',cat:INTERNAL,status:'opened',pair:t.id,time:t.time});
   if(ss.saveRcp&&!S.recipients.some(x=>x.account===r.account&&x.bank===r.bank))S.recipients.push({id:uid(),name:r.name||r.account,bank:r.bank,account:r.account});
   S.lastSend=S.lastSend||{};S.lastSend[r.bank+':'+r.account]={amount:ss.amount,note:ss.note,time:t.time};
   save();awaiting={id:t.id,at:Date.now()};
@@ -1246,7 +1273,7 @@ const SAMPLES=[
 function ingest(text,source,autoConfirm,opt={}){
   const p=parseMessage(text);
   if(!p||!p.amount){opt.quiet||toast('Không đọc được số tiền trong tin này');return null}
-  const t={id:uid(),dir:p.dir,amount:p.amount,bank:p.bank,note:p.note,balance:p.balance,raw:p.raw,source,cat:guessCat(p.note,p.dir,p.raw),status:'pending',time:p.time||opt.time||Date.now()};
+  const t={id:uid(),dir:p.dir,amount:p.amount,bank:p.bank,note:p.note,balance:p.balance,raw:p.raw,source,cat:ownInText(p.raw)?INTERNAL:guessCat(p.note,p.dir,p.raw),status:'pending',time:p.time||opt.time||Date.now()};
   // tin báo khớp lệnh chuyển nhanh đã mở (±30 phút) hoặc khoản định kỳ (±3 ngày) → xác nhận luôn giao dịch đó, không tạo mới
   const opened=S.tx.find(x=>x.dir===t.dir&&x.amount===t.amount&&(!t.bank||x.bank===t.bank)&&!x.proof&&(
     (x.status==='opened'&&Math.abs(x.time-t.time)<=30*60000)||
@@ -1415,7 +1442,7 @@ function vList(){
    ${pend.length?`<div class="sec" style="margin-top:4px"><h2>Cần xác nhận · ${pend.length}</h2></div>${pend.map(pendCard).join('')}<div class="sec"><h2>Đã ghi</h2></div>`:''}
    <div class="seg" style="grid-template-columns:repeat(3,1fr)" id="lf">${[['all','Tất cả'],['in','Tiền vào'],['out','Tiền ra']].map(([k,v])=>`<button data-f="${k}" aria-pressed="${listFilter===k}">${v}</button>`).join('')}</div>
    <div class="chips" style="margin-top:10px" id="lb"><button class="chip" data-b="all" aria-pressed="${listBank==='all'}">Mọi tài khoản</button>${S.accounts.map(a=>`<button class="chip" data-b="${a.bank}" aria-pressed="${listBank===a.bank}">${esc(bankName(a.bank))}</button>`).join('')}</div>
-   ${Object.keys(groups).length?Object.values(groups).map(ts=>{const net=ts.reduce((s,t)=>s+(t.dir==='in'?t.amount:-t.amount),0);
+   ${Object.keys(groups).length?Object.values(groups).map(ts=>{const net=ts.reduce((s,t)=>s+(t.cat===INTERNAL?0:t.dir==='in'?t.amount:-t.amount),0); // chuyển nội bộ không tính
      return `<div class="day"><span>${dayLabel(ts[0].time)}</span><span class="num">${net>=0?'+':'−'}${fmt(Math.abs(net))} ₫</span></div><div class="card flush">${ts.map(txRow).join('')}</div>`}).join(''):'<div class="card empty" style="margin-top:16px">Chưa có giao dịch khớp bộ lọc.</div>'}`;
   $('#lf').onclick=e=>{const b=e.target.closest('[data-f]');if(b){listFilter=b.dataset.f;vList()}};
   $('#lb').onclick=e=>{const b=e.target.closest('[data-b]');if(b){listBank=b.dataset.b;vList()}};
@@ -1465,6 +1492,10 @@ function vMore(){
    <label class="f" for="rcBank">Tài khoản</label><select class="input" id="rcBank">${S.accounts.map(a=>`<option value="${a.bank}">${esc(bankName(a.bank))} · app tính ${money(balanceOf(a.bank))} ₫</option>`).join('')}</select>
    <label class="f">Số dư thực tế</label>${amountInput('rcAmt',0)}
    <button class="btn primary block" style="margin-top:12px" id="rcGo">So sánh</button><div id="rcOut"></div></div>
+  <div class="sec"><h2>Chủ tài khoản</h2></div>
+  <div class="card"><label class="f" for="ownerIn" style="margin-top:0">Họ tên như trên app ngân hàng</label>
+   <input class="input" id="ownerIn" value="${esc(S.owner||'')}" placeholder="VD: PHAM DUY KHA" autocomplete="name" autocapitalize="characters">
+   <div class="xs muted" style="margin-top:8px;line-height:1.5">Quét QR có đúng tên này, hoặc trùng số tài khoản đã lưu bên dưới → tính là chuyển giữa tài khoản của bạn, không tính vào chi tiêu.</div></div>
   <div class="sec"><h2>Tự động</h2></div>
   <div class="card flush"><label class="switch"><span class="grow"><div class="t" style="font-weight:500">Tự xác nhận tin rõ ràng</div><div class="s small muted">Tin biết rõ vào/ra, đúng tài khoản, không trùng thì ghi luôn, không cần bấm Xác nhận</div></span><input type="checkbox" id="autoC" ${S.autoConfirm!==false?'checked':''}></label></div>
   <div class="sec"><h2>Phím tắt iPhone</h2><button class="link" onclick="shortcutGuide()">Cách cài</button></div>
@@ -1476,11 +1507,12 @@ function vMore(){
   <div class="sec"><h2>Người nhận đã lưu</h2><button class="link" onclick="editRecipient()">Thêm</button></div>
   <div class="card flush">${S.recipients.length?S.recipients.map(r=>`<button class="li" onclick="editRecipient('${r.id}')">${personAv(r.name,r.bank)}<span class="grow"><div class="t ell">${esc(r.name)}</div><div class="s ell mono">${esc(bankName(r.bank))} · ${esc(r.account)}</div></span><span class="chev">${ic('chev')}</span></button>`).join(''):'<div class="empty">Chưa có người nhận.</div>'}</div>
   <div class="sec"><h2>Tài khoản & số dư đầu kỳ</h2><button class="link" id="addAcc">Thêm</button></div>
-  <div class="card flush">${S.accounts.map(a=>`<button class="li" onclick="editOpening('${a.bank}')">${bankLogo(a.bank)}<span class="grow"><div class="t">${esc(bankName(a.bank))}</div><div class="s">Số dư đầu kỳ</div></span><span class="num" style="font-weight:600">${money(a.opening)} ₫</span><span class="chev">${ic('chev')}</span></button>`).join('')||'<div class="empty">Chưa có tài khoản.</div>'}</div>
+  <div class="card flush">${S.accounts.map(a=>`<button class="li" onclick="editOpening('${a.bank}')">${bankLogo(a.bank)}<span class="grow"><div class="t">${esc(bankName(a.bank))}</div><div class="s ell mono">${a.number?esc(a.number):'Số dư đầu kỳ'}</div></span><span class="num" style="font-weight:600">${money(a.opening)} ₫</span><span class="chev">${ic('chev')}</span></button>`).join('')||'<div class="empty">Chưa có tài khoản.</div>'}</div>
   <div class="sec"><h2>Dữ liệu demo</h2></div>
   <div class="row" style="gap:8px"><button class="btn grow" id="dSample">Nạp dữ liệu mẫu</button><button class="btn grow" id="dClear" style="color:var(--out)">Xóa sạch</button></div>
   <p class="xs muted" style="margin:18px 4px 0;line-height:1.55">Dữ liệu chỉ lưu trên trình duyệt này. Đọc thông báo tự động cần app Android; trên iPhone dùng Phím tắt đọc SMS hoặc email chuyển tiếp. Danh sách ${Object.keys(BANKS).length} ngân hàng/ví theo VietQR.</p>`;
   bindAmount('rcAmt');
+  $('#ownerIn').onchange=e=>{S.owner=e.target.value.trim();save();toast(ownerName()?'Đã lưu tên chủ tài khoản':'Nhập đủ họ và tên để nhận ra chính xác',3000)};
   $('#autoC').onchange=e=>{S.autoConfirm=e.target.checked;save();toast(e.target.checked?'Đã bật tự xác nhận':'Đã tắt, mọi tin sẽ chờ xác nhận')};
   $('#rcGo').onclick=()=>{const bank=$('#rcBank').value,actual=getAmt('rcAmt'),calc=balanceOf(bank),diff=actual-calc;
     $('#rcOut').innerHTML=diff===0?`<div class="note good">Khớp. Không sót giao dịch nào.</div>`:
@@ -1513,11 +1545,15 @@ function editRecipient(id,d){const r=id?S.recipients.find(x=>x.id===id):null;
 }
 function editOpening(bank){const a=S.accounts.find(x=>x.bank===bank);
   sheet(`<div class="row" style="margin-top:4px">${bankLogo(bank)}<h3 class="grow" style="margin:0">${esc(bankName(bank))}</h3></div>
+   <label class="f" for="opNum">Số tài khoản <span style="font-weight:400">(để nhận ra khi chuyển cho chính mình)</span></label>
+   <input class="input mono" id="opNum" inputmode="numeric" autocomplete="off" value="${esc(a.number||'')}" placeholder="VD: 0071000123456">
    <label class="f">Số dư đầu kỳ</label>${amountInput('op',a.opening)}
    <div class="stack"><button class="btn primary block" id="os">Lưu</button>
    <button class="btn danger block" id="oDel">Bỏ tài khoản này</button>
    <button class="btn ghost block" onclick="closeSheet()">Hủy</button></div>`);
-  bindAmount('op');$('#os').onclick=()=>{a.opening=getAmt('op');save();closeSheet();render()};
+  bindAmount('op');$('#os').onclick=()=>{const n=$('#opNum').value.replace(/\s/g,'');
+    if(n&&!/^\d{6,19}$/.test(n))return toast('Số tài khoản gồm 6–19 chữ số');
+    a.opening=getAmt('op');a.number=n;save();closeSheet();render()};
   $('#oDel').onclick=()=>{if(S.tx.some(t=>t.bank===bank)&&!confirm('Tài khoản này có giao dịch. Vẫn bỏ khỏi danh sách?'))return;
     S.accounts=S.accounts.filter(x=>x.bank!==bank);save();closeSheet();render()}}
 
