@@ -119,6 +119,7 @@ button.li:active{background:var(--field)}
 /* bank logo */
 .bl{position:relative;width:60px;height:34px;flex:none;border-radius:9px;background:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);display:grid;place-items:center;overflow:hidden;font-weight:700;font-size:14px;color:#4B5058}
 .bl img{position:absolute;left:50%;top:50%;width:114%;height:auto;transform:translate(-50%,-50%);background:#fff}
+.bl.cash{background:var(--good-bg);box-shadow:none;color:var(--in)} .bl.cash svg{width:22px;height:22px}
 .bl.sm{width:46px;height:26px;border-radius:7px;font-size:12px}
 .bl.lg{width:88px;height:48px;border-radius:12px}
 .av{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:15px;background:var(--field);color:var(--ink-2)}
@@ -256,6 +257,11 @@ details.more summary::-webkit-details-marker{display:none}
 .own-t{margin-top:10px;background:var(--good-bg);border-radius:12px;padding:10px 14px}
 .own-t b{display:block;font-size:14px;font-weight:600;color:var(--in)}
 .own-t small{display:block;font-size:12px;color:var(--muted)}
+.cashw{margin-top:12px;padding:12px 14px}
+.cashw b{font-size:17px;font-weight:600;white-space:nowrap}
+.cashw .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.cashw .acts svg{width:17px;height:17px}
+.cashw .pending-bar{margin-top:12px}
 .import-bar{background:var(--field);color:var(--ink-2);cursor:pointer}
 /* biểu đồ 7 ngày: mỗi chuỗi (thu/chi) chọn sóng hoặc cột */
 .wk-read{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:14px;min-height:22px;font-size:13.5px;font-weight:600}
@@ -462,6 +468,9 @@ const BANKS={};
     ios:m.ios||ios,android:m.android||android,
     rx:m.rx||(key.length>=3&&ok?new RegExp('\b'+key.replace(/ /g,' ?')+'\b','i'):/$^/)};
 });
+// Ví tiền mặt: tài khoản đặc biệt, không có mã BIN nên không hiện khi chọn ngân hàng nhận
+const CASH='cash';
+BANKS[CASH]={id:CASH,name:'Tiền mặt',full:'Ví tiền mặt',bin:'',short:'Tiền mặt',color:'#2E9C82',transfer:false,logo:'',ios:'',android:'',rx:/$^/};
 const POPULAR=['vcb','mb','tcb','bidv','icb','vba','acb','vpb','tpb','stb','momo','timo'];
 const MY_BANKS = ['vcb','tcb','mb','vpb','tpb','timo','momo'];
 
@@ -593,6 +602,7 @@ function sampleState(){
   return {accounts,recipients,tx};
 }
 let S = load() || sampleState();
+if(!S.accounts.some(a=>a.bank===CASH)) S.accounts.push({id:uid(),bank:CASH,opening:0}); // ai cũng có ví tiền mặt
 save();
 
 // ---------- helpers ----------
@@ -689,6 +699,60 @@ function ownMatch(to){
 // tin nhắn có tên chủ tài khoản đứng riêng (VD "tu PHAM DUY KHA", "PHAM DUY KHA chuyen tien")
 function ownInText(raw){const o=ownerName();return !!o&&(' '+normName(raw)+' ').includes(' '+o+' ')}
 
+// ---------- ví tiền mặt: app không biết tiền mặt tiêu vào đâu, nên ghi nhanh + hỏi lại số còn trong ví ----------
+const isAtm=raw=>/rut tien|\batm\b|cash withdrawal|\brut tm\b/.test(stripVN(raw||'').toLowerCase());
+function cashSpend(){txForm({dir:'out',bank:CASH},'Chi tiền mặt',v=>{S.tx.push({id:uid(),...v,source:'manual',status:'confirmed',time:Date.now()});save();render();toast('Đã ghi chi tiền mặt')})}
+// Nhắc kiểm ví: rút tiền đã hơn 3 giờ mà chưa kiểm, hoặc cả tuần chưa kiểm
+function cashNudge(){
+  const since=S.cashCheck||0,now=Date.now();if(balanceOf(CASH)<=0) return null;
+  const inflow=S.tx.filter(t=>t.bank===CASH&&t.dir==='in'&&t.status==='confirmed'&&t.time>since);
+  if(inflow.length&&now-Math.max(...inflow.map(t=>t.time))>3*3600000) return `Đã rút ${money(inflow.reduce((s,t)=>s+t.amount,0))} ₫ tiền mặt. Tiêu gì rồi? Kiểm lại ví`;
+  if(since&&now-since>7*86400000) return 'Một tuần chưa kiểm ví tiền mặt. Kiểm lại?';
+  return null}
+function cashCheck(){const calc=balanceOf(CASH);
+  sheet(`<div class="row" style="margin-top:4px">${bankLogo(CASH)}<h3 class="grow" style="margin:0">Kiểm ví tiền mặt</h3></div>
+   <div class="small muted" style="margin-top:10px">App đang tính trong ví còn <b class="num" style="color:var(--ink)">${fmt(calc)} ₫</b>. Đếm tiền trong ví rồi nhập số thật.</div>
+   <label class="f">Trong ví còn</label>${amountInput('cc',0)}
+   <button class="link" id="ccZero" style="margin:8px 2px 0">Ví hết sạch tiền (0 ₫)</button>
+   <div class="stack"><button class="btn primary block" id="ccGo">Tiếp</button><button class="btn ghost block" onclick="closeSheet()">Để sau</button></div>`);
+  bindAmount('cc');
+  const go=actual=>{const diff=calc-actual;S.cashCheck=Date.now();save();
+    if(!diff){closeSheet();render();toast('Khớp. Ví đúng '+fmt(actual)+' ₫');return}
+    if(diff>0)cashSplit(diff);else cashExtra(-diff)};
+  $('#ccZero').onclick=()=>go(0);
+  $('#ccGo').onclick=()=>{if(!$('#cc').value.trim())return toast('Nhập số tiền còn trong ví, hoặc chọn Ví hết sạch tiền');go(getAmt('cc'))};
+}
+// Tiêu ít hơn app tính: chia số đã tiêu vào từng nhóm, phần không nhớ ghi chung
+function cashSplit(rem){let cat='Ăn uống',picked=false;
+  sheet(`<h3>Đã tiêu ${fmt(rem)} ₫ tiền mặt</h3><div class="small muted">Nhớ khoản nào ghi khoản đó. Phần không nhớ ghi chung một lần.</div>
+   <label class="f">Số tiền</label>${amountInput('cs',rem)}
+   <label class="f" for="csNote">Ghi chú</label><input class="input" id="csNote" placeholder="VD: ăn trưa, đổ xăng, chợ" maxlength="80">
+   <label class="f">Nhóm</label><div class="chips" id="csCat">${CATS.filter(c=>c!=='Lương'&&c!==INTERNAL).map(c=>`<button class="chip" data-c="${c}" aria-pressed="${c===cat}">${c}</button>`).join('')}</div>
+   <div class="stack"><button class="btn primary block" id="csSave">Ghi khoản này</button>
+    <button class="btn block" id="csRest">Không nhớ: ghi ${fmt(rem)} ₫ là “Chi tiền mặt khác”</button></div>`,{noFocus:true});
+  bindAmount('cs');
+  const setCat=c=>{cat=c;$('#csCat').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===c))};
+  $('#csCat').onclick=e=>{const b=e.target.closest('[data-c]');if(b){picked=true;setCat(b.dataset.c)}};
+  $('#csNote').oninput=e=>{if(!picked){const g=guessCat(e.target.value,'out');setCat(CATS.includes(g)&&g!==INTERNAL&&g!=='Lương'?g:'Khác')}};
+  const add=(amount,c,note)=>S.tx.push({id:uid(),dir:'out',amount,bank:CASH,note,cat:c,source:'manual',status:'confirmed',time:Date.now()});
+  $('#csSave').onclick=()=>{const a=getAmt('cs');if(!a)return toast('Nhập số tiền');if(a>rem)return toast('Lớn hơn số đã tiêu ('+fmt(rem)+' ₫)');
+    add(a,cat,$('#csNote').value.trim()||'Chi tiền mặt');save();const left=rem-a;
+    if(left>0){toast('Đã ghi. Còn '+fmt(left)+' ₫ chưa rõ');cashSplit(left)}else{closeSheet();render();toast('Đã ghi đủ, ví tiền mặt đã khớp')}};
+  $('#csRest').onclick=()=>{add(rem,'Khác','Chi tiền mặt khác');save();closeSheet();render();toast('Đã ghi, ví tiền mặt đã khớp')};
+}
+// Trong ví nhiều hơn app tính: rút tiền chưa ghi, hoặc được đưa tiền mặt
+function cashExtra(extra){const banks=S.accounts.filter(a=>a.bank!==CASH);
+  sheet(`<h3>Ví dư ${fmt(extra)} ₫ so với app</h3><div class="small muted">Có thể bạn đã rút tiền mà app chưa ghi, hoặc được đưa thêm tiền mặt.</div>
+   <label class="f" for="ceBank">Rút từ tài khoản</label><select class="input" id="ceBank">${banks.map(a=>`<option value="${a.bank}">${esc(bankName(a.bank))}</option>`).join('')}</select>
+   <div class="stack"><button class="btn primary block" id="ceAtm">Ghi là rút tiền từ tài khoản này</button>
+    <button class="btn block" id="ceIn">Ghi là tiền mặt nhận thêm</button><button class="btn ghost block" onclick="closeSheet()">Để sau</button></div>`,{noFocus:true});
+  $('#ceAtm').onclick=()=>{const b=$('#ceBank').value,now=Date.now(),id=uid();
+    S.tx.push({id,dir:'out',amount:extra,bank:b,note:'Rút tiền mặt',source:'manual',cat:INTERNAL,status:'confirmed',time:now},
+              {id:uid(),dir:'in',amount:extra,bank:CASH,note:'Rút từ '+bankName(b),source:'manual',cat:INTERNAL,status:'confirmed',pair:id,time:now});
+    save();closeSheet();render();toast('Đã ghi rút tiền, ví đã khớp')};
+  $('#ceIn').onclick=()=>{S.tx.push({id:uid(),dir:'in',amount:extra,bank:CASH,note:'Tiền mặt nhận thêm',source:'manual',cat:'Khác',status:'confirmed',time:Date.now()});save();closeSheet();render();toast('Đã ghi, ví đã khớp')};
+}
+
 // ---------- tự đối soát: số dư trong tin nhắn ngân hàng so với số dư app tính ----------
 // Số dư app tính tới thời điểm tin nhắn (tin chỉ ghi tới phút nên tính trọn phút đó); extraId = giao dịch của chính tin nhắn
 function balanceAt(bank,time,extraId){const a=S.accounts.find(x=>x.bank===bank);let b=a?a.opening:0;
@@ -739,12 +803,14 @@ const ICONS={
  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
  eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
  eyeOff:'<path d="M4 4l16 16M10.6 6.1A9 9 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.7 3.4M6.6 7.6A16 16 0 0 0 2.5 12S6 18 12 18a9 9 0 0 0 4-.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/>', alert:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.5M12 15.8h.01"/>',
+ cash:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/>',
  swap:'<path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/>',
  repeat:'<path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/>',
 };
 const ic=(n,sw)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.8}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
 const initial=s=>esc(String(s||'?').trim().charAt(0).toUpperCase());
 function bankLogo(id,cls){const b=BANKS[id];
+  if(id===CASH) return `<span class="bl cash ${cls||''}">${ic('cash')}</span>`;
   return `<span class="bl ${cls||''}">${initial(b?.name)}${b?`<img src="${b.logo}" alt="" loading="lazy" onerror="this.remove()">`:''}</span>`}
 const personAv=name=>`<span class="av">${initial(name)}</span>`;
 const hasApp=id=>!!(BANKS[id]&&(BANKS[id].ios||BANKS[id].android));
@@ -829,7 +895,8 @@ function monthStats(){
 }
 function vHome(){
   const total=S.accounts.reduce((s,a)=>s+balanceOf(a.bank),0), st=monthStats(), p=pending().length;
-  const accs=S.accounts.map(a=>({...a,bal:balanceOf(a.bank)})).sort((a,b)=>b.bal-a.bal);
+  const accs=S.accounts.filter(a=>a.bank!==CASH).map(a=>({...a,bal:balanceOf(a.bank)})).sort((a,b)=>b.bal-a.bal);
+  const nudge=cashNudge();
   const recent=S.tx.filter(t=>t.status==='confirmed').sort((a,b)=>b.time-a.time).slice(0,3);
   $('#view').innerHTML=`
   <section class="card bal">
@@ -840,6 +907,11 @@ function vHome(){
     ${p?`<button class="pending-bar" onclick="go('list')">${ic('alert')}${p} giao dịch cần xác nhận${ic('chev')}</button>`:''}
     ${S.lastImport?importBtn('pending-bar import-bar','<span class="grow">Nhập tin mới từ Phím tắt</span>'):''}
     ${balIssues().map(x=>`<button class="pending-bar" onclick="balSheet('${x.bank}')">${ic('alert')}<span class="grow">${esc(bankName(x.bank))} lệch ${money(Math.abs(x.diff),x.diff>0?'+':'−')} ₫ so với tin nhắn</span>${ic('chev')}</button>`).join('')}
+  </section>
+  <section class="card cashw">
+    <div class="row">${bankLogo(CASH)}<span class="grow"><div class="xs muted">Ví tiền mặt</div><b class="num">${money(balanceOf(CASH))} ₫</b></span></div>
+    <div class="acts"><button class="btn sm" onclick="cashSpend()">${ic('out',2)}Ghi chi</button><button class="btn sm" onclick="cashCheck()">${ic('cash')}Kiểm ví</button></div>
+    ${nudge?`<button class="pending-bar" onclick="cashCheck()">${ic('alert')}<span class="grow">${nudge}</span>${ic('chev')}</button>`:''}
   </section>
   <section class="card" style="margin-top:12px">
     <div class="row between"><h2 class="h">Phân tích</h2>
@@ -1060,7 +1132,7 @@ function recipientSheet(fromScan,d){
     sendState.to={bank:c.bank,account:c.account,name:c.name};sendState.saveRcp=c.save;sendState.step='amount';prefillLast();closeSheet();vSend()};
 }
 function fromSheet(){
-  const mine=[...new Set(S.accounts.map(a=>a.bank).concat(S.extraApps||[]))].filter(b=>BANKS[b]);
+  const mine=[...new Set(S.accounts.map(a=>a.bank).concat(S.extraApps||[]))].filter(b=>BANKS[b]&&b!==CASH);
   const choose=f=>{sendState.from=f;S.prefFrom=f;save();closeSheet();vSend()};
   sheet(`<h3>Chuyển từ app</h3><div class="small muted">Sổ Tiền mở app này và gửi kèm ảnh QR. Lựa chọn được nhớ cho lần sau.</div>
    <div class="card flush" style="margin-top:14px">${mine.map(b=>`<button class="li" data-f="${b}" ${sendState.from===b?'aria-current="true"':''}>${bankLogo(b)}<span class="grow"><div class="t">${esc(BANKS[b].name)}</div><div class="s">${hasApp(b)?'Mở app, quét ảnh QR':'Chưa có link mở app, mở thủ công'}</div></span></button>`).join('')}</div>
@@ -1070,7 +1142,7 @@ function fromSheet(){
     onPick:f=>{if(!mine.includes(f))S.extraApps=[...new Set([...(S.extraApps||[]),f])];choose(f)}});
 }
 function pickDefaultFrom(){
-  const mine=S.accounts.map(a=>a.bank).concat(S.extraApps||[]).filter(b=>BANKS[b]);
+  const mine=S.accounts.map(a=>a.bank).concat(S.extraApps||[]).filter(b=>BANKS[b]&&b!==CASH);
   if(S.prefFrom&&mine.includes(S.prefFrom)) return S.prefFrom;
   return mine.find(hasApp)||mine[0]||'vcb';
 }
@@ -1284,14 +1356,17 @@ function ingest(text,source,autoConfirm,opt={}){
     opt.quiet||toast((rec?'Đã khớp với khoản định kỳ':'Đã khớp với lệnh chuyển nhanh')+' → xác nhận tự động'+(bd?'. '+balMsg(t.bank||opened.bank,bd):''),bd?5000:0);return opened}
   const d=findDuplicate(S.tx,t);
   if(d) t.dupOf=d.id;
+  const atm=t.dir==='out'&&t.bank&&t.bank!==CASH&&isAtm(p.raw);
+  if(atm){t.cat=INTERNAL;t.note=t.note||'Rút tiền mặt'}
   // tin rõ ràng: biết vào/ra, biết tài khoản đang theo dõi, không trùng
   const clear=!d&&t.dir&&t.bank&&S.accounts.some(a=>a.bank===t.bank);
   const auto=autoConfirm===undefined&&S.autoConfirm!==false&&clear;
   if((autoConfirm&&!d&&t.dir)||auto) t.status='confirmed';
   S.tx.push(t);
+  if(atm&&!d) S.tx.push({id:uid(),dir:'in',amount:t.amount,bank:CASH,note:'Rút từ '+bankName(t.bank),source:t.source,cat:INTERNAL,status:t.status,pair:t.id,time:t.time});
   const bd=noteBalance(t.bank,t.balance,t.time,t.dupOf||t.id); // tin trùng: số dư đã tính qua giao dịch gốc
   save();renderTabs();
-  opt.quiet||toast((auto?'Tin rõ ràng → đã tự ghi':t.status==='confirmed'?'Đã ghi giao dịch':d?'Có thể trùng, xem ở Lịch sử':'Đã thêm, xác nhận ở Lịch sử')+(bd?'. '+balMsg(t.bank,bd):''),bd?5000:0);
+  opt.quiet||toast((atm&&!d?'Đã ghi rút '+fmt(t.amount)+' ₫ vào Ví tiền mặt'+(t.status==='confirmed'?'':', xác nhận ở Lịch sử'):auto?'Tin rõ ràng → đã tự ghi':t.status==='confirmed'?'Đã ghi giao dịch':d?'Có thể trùng, xem ở Lịch sử':'Đã thêm, xác nhận ở Lịch sử')+(bd?'. '+balMsg(t.bank,bd):''),bd?5000:0);
   return t;
 }
 function simulateNotification(){
@@ -1376,8 +1451,11 @@ TK 19033xxxx8 -350,000 VND SD: 4,210,000 VND ND: an trua</div>
    <div class="stack">${importBtn('btn primary block','Nhập tin từ Phím tắt')}<button class="btn ghost block" onclick="closeSheet()">Đóng</button></div>`,{noFocus:true});
 }
 
-function confirmTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;t.status='confirmed';delete t.dupOf;save();render();toast('Đã xác nhận')}
-function rejectTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;S.tx=S.tx.filter(x=>x.id!==id);
+const partners=t=>S.tx.filter(x=>x!==t&&(x.pair===t.id||(t.pair&&x.id===t.pair)));
+function confirmTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;t.status='confirmed';delete t.dupOf;
+  partners(t).forEach(x=>{if(x.status==='pending')x.status='confirmed'});save();render();toast('Đã xác nhận')}
+function delTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;const ps=partners(t).filter(x=>x.cat===INTERNAL);S.tx=S.tx.filter(x=>x!==t&&!ps.includes(x))}
+function rejectTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;delTx(id);
   if(S.balSeen?.[t.bank]?.txId===id)delete S.balSeen[t.bank]; // tin bị bỏ thì số dư của nó cũng bỏ
   save();render();toast('Đã bỏ')}
 function mergeTx(id){const t=S.tx.find(x=>x.id===id),d=t&&S.tx.find(x=>x.id===t.dupOf);if(!t)return;
@@ -1427,7 +1505,7 @@ function openTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;
    ${t.source==='adjust'?'':(()=>{const r=t.recId&&(S.recurring||[]).find(x=>x.id===t.recId);
      return r?`<button class="pending-bar" style="background:var(--card);color:var(--ink-2)" onclick="recurringSheet('${r.id}')">${ic('repeat')}<span class="grow">${recLabel(r,true)}</span>${ic('chev')}</button>`
        :`<button class="btn block" style="margin-top:12px" onclick="recurringSheet(null,S.tx.find(x=>x.id==='${id}'))">${ic('repeat')}Lặp lại hằng tháng</button>`})()}
-   <div class="row" style="margin-top:12px;gap:8px"><button class="btn grow" onclick="closeSheet();editTx('${id}')">Sửa</button><button class="btn danger grow" onclick="if(confirm('Xóa giao dịch này?')){S.tx=S.tx.filter(x=>x.id!=='${id}');save();closeSheet();render()}">Xóa</button></div>`,{noFocus:true})}
+   <div class="row" style="margin-top:12px;gap:8px"><button class="btn grow" onclick="closeSheet();editTx('${id}')">Sửa</button><button class="btn danger grow" onclick="if(confirm('Xóa giao dịch này?')){delTx('${id}');save();closeSheet();render()}">Xóa</button></div>`,{noFocus:true})}
 
 // ---------- LIST (kèm giao dịch cần xác nhận ở đầu) ----------
 let listFilter='all',listBank='all';
@@ -1522,7 +1600,7 @@ function vMore(){
   $('#addAcc').onclick=()=>pickBank({title:'Thêm tài khoản',filter:b=>!S.accounts.some(a=>a.bank===b.id),
     onPick:id=>{S.accounts.push({id:uid(),bank:id,opening:0});save();vMore();editOpening(id)}});
   $('#dSample').onclick=()=>{if(confirm('Thay toàn bộ dữ liệu bằng dữ liệu mẫu?')){S=sampleState();save();render()}};
-  $('#dClear').onclick=()=>{if(confirm('Xóa toàn bộ dữ liệu?')){S={accounts:MY_BANKS.map(b=>({id:uid(),bank:b,opening:0})),recipients:[],tx:[]};save();render()}};
+  $('#dClear').onclick=()=>{if(confirm('Xóa toàn bộ dữ liệu?')){S={accounts:[...MY_BANKS,CASH].map(b=>({id:uid(),bank:b,opening:0})),recipients:[],tx:[]};save();render()}};
 }
 function editRecipient(id,d){const r=id?S.recipients.find(x=>x.id===id):null;
   const v=d||(r?{name:r.name,bank:r.bank,account:r.account}:{name:'',bank:'',account:''});
